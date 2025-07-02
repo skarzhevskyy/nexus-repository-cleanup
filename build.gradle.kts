@@ -24,7 +24,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
-	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9")
 
 	implementation("org.apache.tomcat.embed:tomcat-embed-core:10.1.42") {
 		exclude(group = "org.apache.tomcat", module = "tomcat-annotations-api")
