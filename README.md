@@ -72,8 +72,8 @@ policies:
 ./gradlew run --args="--config cleanup-config.yml --dry-run"
 
 # Execute actual cleanup
-./gradlew run --args="--config cleanup-config.yml --dry-run"
-# or execute the donoaded JAR
+./gradlew run --args="--config cleanup-config.yml"
+# or execute the downloaded JAR
 java -jar nexus-repository-cleanup.jar --config cleanup-config.yml
 
 # Using docker with environment variables
