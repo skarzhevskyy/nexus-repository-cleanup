@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 
 import com.pyx4j.nxrm.cleanup.model.CleanupRuleSet;
 import com.pyx4j.nxrm.cleanup.model.GroupsSummary;
@@ -35,7 +34,7 @@ public final class NxCleanupJob {
 
     private final ApiClient apiClient;
 
-    private final Predicate<ComponentXO> componentFilter;
+    private final ComponentFilter componentFilter;
 
     private final RepositoryComponentsSummary repositoryComponentsSummary;
 
@@ -50,18 +49,19 @@ public final class NxCleanupJob {
         groupsSummary = new GroupsSummary();
         groupsSummary.setEnabled(args.reportTopGroups);
 
-        // Create component filter based on command line arguments
-        componentFilter = ComponentFilter.createFilter(args);
         this.args = args;
 
         apiClient = createApiClient(args);
 
+        CleanupRuleSet ruleSet;
         try {
-            CleanupRuleSet ruleSet = new CleanupRuleParser().parseFromFile(Path.of(args.rulesFile));
+            ruleSet = new CleanupRuleParser().parseFromFile(Path.of(args.rulesFile));
         } catch (IOException e) {
             log.error("Failed to parse cleanup rules from file: {}", args.rulesFile, e);
             throw new IllegalArgumentException("Invalid cleanup rules file: " + args.rulesFile, e);
         }
+        // Create component filter based on rules
+        componentFilter = new ComponentFilter(ruleSet);
     }
 
     private static ApiClient createApiClient(NxCleanupCommandArgs args) {
@@ -106,7 +106,7 @@ public final class NxCleanupJob {
         repoApi.getRepositories()
                 .doOnNext(repository -> log.debug("Found {} repository of type {}", repository.getName(), repository.getType()))
                 .filter(repository -> !repository.getType().equals(AbstractApiRepository.TypeEnum.GROUP)) // Exclude group repositories
-                .filter(repository -> ComponentFilter.matchesRepositoryFilter(repository.getName(), args.repositories)) // Filter repositories early
+                .filter(repository -> componentFilter.matchesRepositoryFilter(repository.getName())) // Filter repositories early
                 .doOnNext(repository -> log.trace("Processing repository: {}", repository.getName()))
                 .flatMap(repository -> processRepositoryComponents(repository))
                 .collectList()
@@ -153,7 +153,7 @@ public final class NxCleanupJob {
                     if (page != null && page.getItems() != null) {
                         // Apply filter to components
                         List<ComponentXO> filteredComponents = page.getItems().stream()
-                                .filter(componentFilter)
+                                .filter(componentFilter.getComponentFilter())
                                 .toList();
 
                         log.debug("Repository {} page has {} components (filtered from {}) for processing",
