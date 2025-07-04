@@ -1,4 +1,4 @@
-package com.pyx4j.nxrm.cleanup.model;
+package com.pyx4j.nxrm.cleanup;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,7 +12,9 @@ import java.util.Set;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.pyx4j.nxrm.cleanup.DateFilterParser;
+import com.google.common.collect.ImmutableSet;
+import com.pyx4j.nxrm.cleanup.model.CleanupRule;
+import com.pyx4j.nxrm.cleanup.model.CleanupRuleSet;
 import org.jspecify.annotations.NonNull;
 
 /**
@@ -21,7 +23,7 @@ import org.jspecify.annotations.NonNull;
  */
 public final class CleanupRuleParser {
 
-    private static final Set<String> VALID_ACTIONS = Set.of("delete", "keep");
+    private static final Set<String> VALID_ACTIONS = ImmutableSet.of("delete", "keep");
     private static final String NEVER = "never";
 
     private final ObjectMapper yamlMapper;

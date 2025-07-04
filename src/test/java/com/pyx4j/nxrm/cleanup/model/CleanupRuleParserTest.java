@@ -10,8 +10,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.OffsetDateTime;
-import java.util.List;
 
+import com.pyx4j.nxrm.cleanup.CleanupRuleParser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -210,14 +210,14 @@ class CleanupRuleParserTest {
     }
 
     @Test
-    void parseFromString_withNoRules_shouldThrowException() {
+    void parseFromString_withUnknownFields_shouldThrowException() {
         String yaml = """
                 other: value
                 """;
 
         assertThatThrownBy(() -> parser.parseFromString(yaml))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Rule set must contain at least one rule");
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("Unrecognized field \"other\"");
     }
 
     @Test

@@ -10,10 +10,10 @@ import picocli.CommandLine;
 public class NxCleanupCommandArgs implements Callable<Integer> {
 
     @CommandLine.Option(
-            names = {"--config"},
-            description = "The cleanup policies and their filters",
+            names = {"--rules"},
+            description = "The cleanup rules",
             required = true)
-    public String configFile;
+    public String rulesFile;
 
     @CommandLine.Option(
             names = {"--dry-run"},

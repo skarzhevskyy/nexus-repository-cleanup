@@ -2,6 +2,7 @@ package com.pyx4j.nxrm.cleanup;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
+import com.pyx4j.nxrm.cleanup.model.CleanupRuleSet;
 import com.pyx4j.nxrm.cleanup.model.GroupsSummary;
 import com.pyx4j.nxrm.cleanup.model.RepositoryComponentsSummary;
 import org.slf4j.Logger;
@@ -53,6 +55,13 @@ public final class NxCleanupJob {
         this.args = args;
 
         apiClient = createApiClient(args);
+
+        try {
+            CleanupRuleSet ruleSet = new CleanupRuleParser().parseFromFile(Path.of(args.rulesFile));
+        } catch (IOException e) {
+            log.error("Failed to parse cleanup rules from file: {}", args.rulesFile, e);
+            throw new IllegalArgumentException("Invalid cleanup rules file: " + args.rulesFile, e);
+        }
     }
 
     private static ApiClient createApiClient(NxCleanupCommandArgs args) {

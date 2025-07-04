@@ -9,7 +9,7 @@ Nexus Repository Manager’s built-in Cleanup Policies do not support filtering 
 - **Declarative configuration**: Define cleanup rules in YAML.
 - **Code-driven**: Manage policies alongside your CI/CD pipeline or Kubernetes Jobs.
 - **REST API integration**: Works with Nexus OSS or Pro over HTTP(S).
-- **Extensible filters**: Out-of-the-box support for “never downloaded,” age, size, and more.
+- **Extensible filters**: Out-of-the-box support for “never downloaded,” age, and more.
 
 ## Features
 
@@ -17,8 +17,6 @@ Nexus Repository Manager’s built-in Cleanup Policies do not support filtering 
   Delete components that have never been requested by any client.
 - **Age-based cleanup**  
   Remove artifacts older than a specified number of days.
-- **Size-based cleanup**  
-  Purge components exceeding a size threshold.
 - **Repository scoping**  
   Target specific repositories or repository groups.
 - **Dry-run mode**  
@@ -128,12 +126,12 @@ rules:
 
 ```bash
 # Run cleanup with dry-run (no deletions) from this source directory
-./gradlew run --args="--config cleanup-config.yml --dry-run"
+./gradlew run --args="--rules cleanup-rules.yml --dry-run"
 
 # Execute actual cleanup
-./gradlew run --args="--config cleanup-config.yml"
+./gradlew run --args="--rules cleanup-rules.yml"
 # or execute the downloaded JAR
-java -jar nexus-repository-cleanup.jar --config cleanup-config.yml
+java -jar nexus-repository-cleanup.jar --rules cleanup-rules.yml
 
 # Using docker with environment variables
 docker run --rm \
@@ -142,7 +140,7 @@ docker run --rm \
   -e NEXUS_USERNAME=admin \
   -e NEXUS_PASSWORD=yourpassword \
   ghcr.io/skarzhevskyy/nexus-repository-cleanup:latest \
-  --config /app/config/cleanup-config.yml
+  --rules /app/config/cleanup-rules.yml
 ```
 
 ## Contributing

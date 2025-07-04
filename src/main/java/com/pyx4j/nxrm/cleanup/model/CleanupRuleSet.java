@@ -11,7 +11,7 @@ import org.jspecify.annotations.NonNull;
  * Represents a collection of cleanup rules loaded from a YAML file.
  * Contains a list of rules that define cleanup policies.
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown = false)
 public final class CleanupRuleSet {
 
     @JsonProperty("rules")
