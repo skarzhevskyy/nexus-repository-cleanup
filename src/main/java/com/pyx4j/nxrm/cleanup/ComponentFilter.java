@@ -3,7 +3,6 @@ package com.pyx4j.nxrm.cleanup;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import com.google.common.base.Strings;
 import com.pyx4j.nxrm.cleanup.model.CleanupRule;
@@ -33,12 +32,12 @@ final class ComponentFilter {
     @NonNull
     private Predicate<ComponentXO> createFilter(@NonNull CleanupRuleSet ruleSet) {
         List<ParsedRule> enabledRules = parseRules(ruleSet);
-        
+
         return component -> {
             if (component == null || component.getAssets() == null || component.getAssets().isEmpty()) {
                 return false;
             }
-            
+
             // Split rules by action
             List<ParsedRule> deleteRules = enabledRules.stream()
                     .filter(rule -> "delete".equals(rule.action))
@@ -46,14 +45,14 @@ final class ComponentFilter {
             List<ParsedRule> keepRules = enabledRules.stream()
                     .filter(rule -> "keep".equals(rule.action))
                     .toList();
-            
+
             // Check if any keep rule matches - if so, component should not be deleted
             boolean matchesKeepRule = keepRules.stream()
                     .anyMatch(rule -> matchesRule(component, rule));
             if (matchesKeepRule) {
                 return false;
             }
-            
+
             // Check if any delete rule matches
             return deleteRules.stream()
                     .anyMatch(rule -> matchesRule(component, rule));
@@ -77,13 +76,13 @@ final class ComponentFilter {
     @NonNull
     private ParsedRule parseRule(@NonNull CleanupRule rule) {
         CleanupRule.CleanupFilters filters = rule.getFilters();
-        
+
         // Parse date filters
         OffsetDateTime updatedBefore = null;
         if (filters.getUpdated() != null) {
             updatedBefore = DateFilterParser.parseDate(filters.getUpdated());
         }
-        
+
         OffsetDateTime downloadedBefore = null;
         boolean isNeverDownloaded = false;
         if (filters.getDownloaded() != null) {
@@ -93,7 +92,7 @@ final class ComponentFilter {
                 downloadedBefore = CleanupRuleParser.parseDownloadedFilter(filters.getDownloaded());
             }
         }
-        
+
         return new ParsedRule(
                 rule.getName(),
                 rule.getAction(),
@@ -118,17 +117,17 @@ final class ComponentFilter {
         if (repositoryPatterns == null || repositoryPatterns.isEmpty()) {
             return true; // No patterns means match all repositories
         }
-        
+
         if (Strings.isNullOrEmpty(repositoryName)) {
             return false; // Cannot match patterns with null/empty repository name
         }
-        
+
         return matchesAnyPattern(repositoryName, repositoryPatterns);
     }
 
     /**
      * Extracts all repository patterns from enabled rules in the rule set.
-     * 
+     *
      * @param ruleSet The cleanup rule set
      * @return List of repository patterns from all enabled rules, or empty list if none
      */
@@ -237,62 +236,58 @@ final class ComponentFilter {
         if (!matchesComponentFilters(component, rule.repositories, rule.groups, rule.names)) {
             return false;
         }
-        
+
         // Check format filter
         if (rule.formats != null && !rule.formats.isEmpty()) {
             if (!matchesAnyPattern(component.getFormat(), rule.formats)) {
                 return false;
             }
         }
-        
+
         // Check version filter
         if (rule.versions != null && !rule.versions.isEmpty()) {
             if (!matchesAnyPattern(component.getVersion(), rule.versions)) {
                 return false;
             }
         }
-        
+
         // Check asset-level date filters - ALL assets must match ALL criteria
         List<AssetXO> assets = component.getAssets();
         if (assets == null || assets.isEmpty()) {
             return false;
         }
-        
+
         // Check updated filter (blobCreated) - all assets must be created before the cutoff
         if (rule.updatedBefore != null) {
             boolean allAssetsMatch = assets.stream()
-                    .allMatch(asset -> asset.getBlobCreated() != null && 
-                             asset.getBlobCreated().isBefore(rule.updatedBefore));
+                    .allMatch(asset -> asset.getBlobCreated() != null &&
+                            asset.getBlobCreated().isBefore(rule.updatedBefore));
             if (!allAssetsMatch) {
                 return false;
             }
         }
-        
+
         // Check downloaded filter
         if (rule.isNeverDownloaded) {
             // All assets must have never been downloaded (lastDownloaded == null)
             boolean allNeverDownloaded = assets.stream()
                     .allMatch(asset -> asset.getLastDownloaded() == null);
-            if (!allNeverDownloaded) {
-                return false;
-            }
+            return allNeverDownloaded;
         } else if (rule.downloadedBefore != null) {
             // All assets must be downloaded before the cutoff (or never downloaded)
             boolean allAssetsMatch = assets.stream()
-                    .allMatch(asset -> asset.getLastDownloaded() == null || 
-                             asset.getLastDownloaded().isBefore(rule.downloadedBefore));
-            if (!allAssetsMatch) {
-                return false;
-            }
+                    .allMatch(asset -> asset.getLastDownloaded() == null ||
+                            asset.getLastDownloaded().isBefore(rule.downloadedBefore));
+            return allAssetsMatch;
         }
-        
+
         return true;
     }
 
     /**
      * Parsed rule with precompiled patterns and dates for efficient matching.
      */
-    private static final record ParsedRule(
+    private record ParsedRule(
             @NonNull String name,
             @NonNull String action,
             @Nullable List<String> repositories,
@@ -303,5 +298,6 @@ final class ComponentFilter {
             @Nullable OffsetDateTime updatedBefore,
             @Nullable OffsetDateTime downloadedBefore,
             boolean isNeverDownloaded
-    ) {}
+    ) {
+    }
 }

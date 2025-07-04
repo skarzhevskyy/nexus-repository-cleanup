@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.function.Predicate;
 
 import com.pyx4j.nxrm.cleanup.model.CleanupRule;
 import com.pyx4j.nxrm.cleanup.model.CleanupRuleSet;
@@ -20,9 +19,9 @@ class ComponentFilterTest {
     @Test
     void constructor_withEmptyRuleSet_shouldCreateFilter() {
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of());
-        
+
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         assertThat(filter.getComponentFilter()).isNotNull();
     }
 
@@ -30,9 +29,9 @@ class ComponentFilterTest {
     void matchesRepositoryFilter_withNoPatterns_shouldReturnTrue() {
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of());
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         boolean result = filter.matchesRepositoryFilter("any-repo");
-        
+
         assertThat(result).isTrue();
     }
 
@@ -43,9 +42,9 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         boolean result = filter.matchesRepositoryFilter(null);
-        
+
         assertThat(result).isFalse();
     }
 
@@ -56,9 +55,9 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         boolean result = filter.matchesRepositoryFilter("");
-        
+
         assertThat(result).isFalse();
     }
 
@@ -69,7 +68,7 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         assertThat(filter.matchesRepositoryFilter("test-repo")).isTrue();
         assertThat(filter.matchesRepositoryFilter("prod-maven")).isTrue();
         assertThat(filter.matchesRepositoryFilter("dev-repo")).isFalse();
@@ -83,9 +82,9 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         boolean result = filter.matchesRepositoryFilter("test-repo");
-        
+
         assertThat(result).isTrue(); // No enabled patterns, so matches all
     }
 
@@ -93,9 +92,9 @@ class ComponentFilterTest {
     void getComponentFilter_withNullComponent_shouldReturnFalse() {
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of());
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         boolean result = filter.getComponentFilter().test(null);
-        
+
         assertThat(result).isFalse();
     }
 
@@ -105,9 +104,9 @@ class ComponentFilterTest {
         ComponentFilter filter = new ComponentFilter(ruleSet);
         ComponentXO component = new ComponentXO();
         component.setAssets(null);
-        
+
         boolean result = filter.getComponentFilter().test(component);
-        
+
         assertThat(result).isFalse();
     }
 
@@ -117,9 +116,9 @@ class ComponentFilterTest {
         ComponentFilter filter = new ComponentFilter(ruleSet);
         ComponentXO component = new ComponentXO();
         component.setAssets(List.of());
-        
+
         boolean result = filter.getComponentFilter().test(component);
-        
+
         assertThat(result).isFalse();
     }
 
@@ -131,11 +130,11 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         ComponentXO component = createComponent("test-component");
-        
+
         boolean result = filter.getComponentFilter().test(component);
-        
+
         assertThat(result).isTrue();
     }
 
@@ -151,11 +150,11 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(keepRule, deleteRule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         ComponentXO component = createComponent("test-component");
-        
+
         boolean result = filter.getComponentFilter().test(component);
-        
+
         assertThat(result).isFalse();
     }
 
@@ -168,11 +167,11 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         ComponentXO component = createComponent("test-component");
-        
+
         boolean result = filter.getComponentFilter().test(component);
-        
+
         assertThat(result).isFalse(); // No enabled rules match
     }
 
@@ -184,13 +183,13 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         ComponentXO mavenComponent = createComponent("test-component");
         mavenComponent.setFormat("maven2");
-        
+
         ComponentXO npmComponent = createComponent("test-component");
         npmComponent.setFormat("npm");
-        
+
         assertThat(filter.getComponentFilter().test(mavenComponent)).isTrue();
         assertThat(filter.getComponentFilter().test(npmComponent)).isFalse();
     }
@@ -203,13 +202,13 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         ComponentXO matchingComponent = createComponent("test-component");
         matchingComponent.setVersion("1.0.0");
-        
+
         ComponentXO nonMatchingComponent = createComponent("test-component");
         nonMatchingComponent.setVersion("2.0.0");
-        
+
         assertThat(filter.getComponentFilter().test(matchingComponent)).isTrue();
         assertThat(filter.getComponentFilter().test(nonMatchingComponent)).isFalse();
     }
@@ -222,13 +221,13 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         // Component with asset created 60 days ago (should match)
         ComponentXO oldComponent = createComponentWithAssetCreated(OffsetDateTime.now().minusDays(60));
-        
+
         // Component with asset created 10 days ago (should not match)
         ComponentXO newComponent = createComponentWithAssetCreated(OffsetDateTime.now().minusDays(10));
-        
+
         assertThat(filter.getComponentFilter().test(oldComponent)).isTrue();
         assertThat(filter.getComponentFilter().test(newComponent)).isFalse();
     }
@@ -241,17 +240,17 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         // Component with never downloaded asset
         ComponentXO neverDownloadedComponent = createComponent("test-component");
         AssetXO neverDownloadedAsset = neverDownloadedComponent.getAssets().get(0);
         neverDownloadedAsset.setLastDownloaded(null);
-        
+
         // Component with downloaded asset
         ComponentXO downloadedComponent = createComponent("test-component");
         AssetXO downloadedAsset = downloadedComponent.getAssets().get(0);
         downloadedAsset.setLastDownloaded(OffsetDateTime.now().minusDays(5));
-        
+
         assertThat(filter.getComponentFilter().test(neverDownloadedComponent)).isTrue();
         assertThat(filter.getComponentFilter().test(downloadedComponent)).isFalse();
     }
@@ -264,22 +263,22 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         // Component with asset downloaded 60 days ago (should match)
         ComponentXO oldDownloadComponent = createComponent("test-component");
         AssetXO oldAsset = oldDownloadComponent.getAssets().get(0);
         oldAsset.setLastDownloaded(OffsetDateTime.now().minusDays(60));
-        
+
         // Component with asset downloaded 10 days ago (should not match)
         ComponentXO recentDownloadComponent = createComponent("test-component");
         AssetXO recentAsset = recentDownloadComponent.getAssets().get(0);
         recentAsset.setLastDownloaded(OffsetDateTime.now().minusDays(10));
-        
+
         // Component with never downloaded asset (should match)
         ComponentXO neverDownloadedComponent = createComponent("test-component");
         AssetXO neverDownloadedAsset = neverDownloadedComponent.getAssets().get(0);
         neverDownloadedAsset.setLastDownloaded(null);
-        
+
         assertThat(filter.getComponentFilter().test(oldDownloadComponent)).isTrue();
         assertThat(filter.getComponentFilter().test(recentDownloadComponent)).isFalse();
         assertThat(filter.getComponentFilter().test(neverDownloadedComponent)).isTrue();
@@ -293,7 +292,7 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         // Component where all assets are old (should match)
         ComponentXO allOldComponent = new ComponentXO();
         allOldComponent.setName("test-component");
@@ -302,7 +301,7 @@ class ComponentFilterTest {
         AssetXO oldAsset2 = new AssetXO();
         oldAsset2.setBlobCreated(OffsetDateTime.now().minusDays(45));
         allOldComponent.setAssets(List.of(oldAsset1, oldAsset2));
-        
+
         // Component where one asset is new (should not match)
         ComponentXO mixedComponent = new ComponentXO();
         mixedComponent.setName("test-component");
@@ -311,7 +310,7 @@ class ComponentFilterTest {
         AssetXO newAsset = new AssetXO();
         newAsset.setBlobCreated(OffsetDateTime.now().minusDays(10));
         mixedComponent.setAssets(List.of(oldAsset3, newAsset));
-        
+
         assertThat(filter.getComponentFilter().test(allOldComponent)).isTrue();
         assertThat(filter.getComponentFilter().test(mixedComponent)).isFalse();
     }
@@ -326,27 +325,27 @@ class ComponentFilterTest {
                 .build();
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         ComponentFilter filter = new ComponentFilter(ruleSet);
-        
+
         // Component matching all filters
         ComponentXO matchingComponent = createComponentWithAssetCreated(OffsetDateTime.now().minusDays(60));
         matchingComponent.setName("test-component");
         matchingComponent.setFormat("maven2");
-        
+
         // Component not matching name filter
         ComponentXO wrongNameComponent = createComponentWithAssetCreated(OffsetDateTime.now().minusDays(60));
         wrongNameComponent.setName("prod-component");
         wrongNameComponent.setFormat("maven2");
-        
+
         // Component not matching format filter
         ComponentXO wrongFormatComponent = createComponentWithAssetCreated(OffsetDateTime.now().minusDays(60));
         wrongFormatComponent.setName("test-component");
         wrongFormatComponent.setFormat("npm");
-        
+
         // Component not matching updated filter
         ComponentXO tooRecentComponent = createComponentWithAssetCreated(OffsetDateTime.now().minusDays(10));
         tooRecentComponent.setName("test-component");
         tooRecentComponent.setFormat("maven2");
-        
+
         assertThat(filter.getComponentFilter().test(matchingComponent)).isTrue();
         assertThat(filter.getComponentFilter().test(wrongNameComponent)).isFalse();
         assertThat(filter.getComponentFilter().test(wrongFormatComponent)).isFalse();

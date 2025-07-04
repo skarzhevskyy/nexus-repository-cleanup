@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
  * Builder pattern for creating CleanupRule instances in tests.
  */
 public final class CleanupRuleBuilder {
-    
+
     private String name = "test-rule";
     private String description;
     private boolean enabled = true;

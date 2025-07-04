@@ -30,7 +30,7 @@ class ComponentFilterIntegrationTest {
                 .build();
 
         CleanupRule keepProductionArtifacts = CleanupRuleBuilder.builder()
-                .name("keep-production-artifacts") 
+                .name("keep-production-artifacts")
                 .action("keep")
                 .repositories(List.of("maven-*"))
                 .names(List.of("prod-*"))
@@ -44,8 +44,8 @@ class ComponentFilterIntegrationTest {
                 .build();
 
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(
-                deleteOldSnapshots, 
-                keepProductionArtifacts, 
+                deleteOldSnapshots,
+                keepProductionArtifacts,
                 deleteNeverDownloaded
         ));
 
@@ -104,13 +104,13 @@ class ComponentFilterIntegrationTest {
         ComponentXO mixedAgeComponent = new ComponentXO();
         mixedAgeComponent.setRepository("test-repo");
         mixedAgeComponent.setName("mixed-component");
-        
+
         AssetXO oldAsset = new AssetXO();
         oldAsset.setBlobCreated(OffsetDateTime.now().minusDays(60));
-        
+
         AssetXO newAsset = new AssetXO();
         newAsset.setBlobCreated(OffsetDateTime.now().minusDays(10));
-        
+
         mixedAgeComponent.setAssets(List.of(oldAsset, newAsset));
 
         // Should not match because not ALL assets are old
@@ -120,13 +120,13 @@ class ComponentFilterIntegrationTest {
         ComponentXO allOldComponent = new ComponentXO();
         allOldComponent.setRepository("test-repo");
         allOldComponent.setName("old-component");
-        
+
         AssetXO oldAsset1 = new AssetXO();
         oldAsset1.setBlobCreated(OffsetDateTime.now().minusDays(60));
-        
+
         AssetXO oldAsset2 = new AssetXO();
         oldAsset2.setBlobCreated(OffsetDateTime.now().minusDays(45));
-        
+
         allOldComponent.setAssets(List.of(oldAsset1, oldAsset2));
 
         // Should match because ALL assets are old
@@ -140,11 +140,11 @@ class ComponentFilterIntegrationTest {
         component.setGroup(group);
         component.setName(name);
         component.setVersion(version);
-        
+
         AssetXO asset = new AssetXO();
         asset.setBlobCreated(blobCreated);
         asset.setLastDownloaded(lastDownloaded);
-        
+
         component.setAssets(List.of(asset));
         return component;
     }
