@@ -16,9 +16,10 @@ import org.jspecify.annotations.Nullable;
  * Utility class for parsing date filter arguments.
  * Supports ISO-8601 format dates and "days ago" patterns.
  */
-final class DateFilterParser {
+public final class DateFilterParser {
 
     private static final Pattern DAYS_AGO_PATTERN = Pattern.compile("^(\\d+)d$");
+    private static final Pattern DAYS_PATTERN = Pattern.compile("^(\\d+)\\s*days?(?:\\s+ago)?$", Pattern.CASE_INSENSITIVE);
 
     private DateFilterParser() {
         // Utility class should not be instantiated
@@ -32,7 +33,7 @@ final class DateFilterParser {
      * @throws IllegalArgumentException if the date string format is invalid
      */
     @Nullable
-    static OffsetDateTime parseDate(@Nullable String dateString) {
+    public static OffsetDateTime parseDate(@Nullable String dateString) {
         if (dateString == null || dateString.trim().isEmpty()) {
             return null;
         }
@@ -43,6 +44,13 @@ final class DateFilterParser {
         Matcher daysAgoMatcher = DAYS_AGO_PATTERN.matcher(trimmed);
         if (daysAgoMatcher.matches()) {
             int daysAgo = Integer.parseInt(daysAgoMatcher.group(1));
+            return OffsetDateTime.now(ZoneOffset.UTC).minusDays(daysAgo);
+        }
+
+        // Check if it's a "days" pattern (e.g., "90 days", "90 Days ago")
+        Matcher daysMatcher = DAYS_PATTERN.matcher(trimmed);
+        if (daysMatcher.matches()) {
+            int daysAgo = Integer.parseInt(daysMatcher.group(1));
             return OffsetDateTime.now(ZoneOffset.UTC).minusDays(daysAgo);
         }
 
@@ -57,7 +65,7 @@ final class DateFilterParser {
                 return localDate.atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
             } catch (DateTimeParseException e2) {
                 throw new IllegalArgumentException("Invalid date format: '" + trimmed +
-                        "'. Expected ISO-8601 format (e.g., '2024-06-01' or '2024-06-01T00:00:00Z') or 'Nd' format (e.g., '30d')", e2);
+                        "'. Expected ISO-8601 format (e.g., '2024-06-01' or '2024-06-01T00:00:00Z'), 'Nd' format (e.g., '30d'), or 'N days' format (e.g., '30 days', '30 Days ago')", e2);
             }
         }
     }
@@ -70,7 +78,7 @@ final class DateFilterParser {
      * @param filterType The type of filter for error messages
      * @throws IllegalArgumentException if the date range is invalid
      */
-    static void validateDateRange(@Nullable OffsetDateTime before, @Nullable OffsetDateTime after, @NonNull String filterType) {
+    public static void validateDateRange(@Nullable OffsetDateTime before, @Nullable OffsetDateTime after, @NonNull String filterType) {
         Objects.requireNonNull(filterType, "Filter type cannot be null");
 
         if (before != null && after != null && before.isBefore(after)) {
