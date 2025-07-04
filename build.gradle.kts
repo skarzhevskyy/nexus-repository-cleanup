@@ -35,6 +35,10 @@ dependencies {
 	// Command line arguments
 	implementation("info.picocli:picocli:4.7.7")
 	implementation("com.opencsv:opencsv:5.11.2")
+	
+	// YAML parsing
+	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
+	implementation("com.fasterxml.jackson.core:jackson-databind")
 
 	implementation("com.google.guava:guava:33.4.8-jre")
 	implementation("org.apache.commons:commons-lang3")

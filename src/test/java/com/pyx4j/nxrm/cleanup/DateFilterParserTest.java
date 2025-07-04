@@ -94,9 +94,9 @@ class DateFilterParserTest {
 
     @Test
     void parseDate_withInvalidDaysAgoFormat_shouldThrowException() {
-        assertThatThrownBy(() -> DateFilterParser.parseDate("7days"))
+        assertThatThrownBy(() -> DateFilterParser.parseDate("invalid-format"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Invalid date format: '7days'");
+                .hasMessageContaining("Invalid date format: 'invalid-format'");
     }
 
     @Test
@@ -104,6 +104,66 @@ class DateFilterParserTest {
         assertThatThrownBy(() -> DateFilterParser.parseDate("-5d"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Invalid date format: '-5d'");
+    }
+
+    @Test
+    void parseDate_withDaysPattern_shouldCalculateCorrectly() {
+        OffsetDateTime beforeCall = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime result = DateFilterParser.parseDate("90 days");
+        OffsetDateTime afterCall = OffsetDateTime.now(ZoneOffset.UTC);
+
+        assertThat(result).isNotNull();
+        OffsetDateTime expectedEarliest = beforeCall.minusDays(90).minusSeconds(1);
+        OffsetDateTime expectedLatest = afterCall.minusDays(90).plusSeconds(1);
+        assertThat(result).isBetween(expectedEarliest, expectedLatest);
+    }
+
+    @Test
+    void parseDate_withLongFormDaysAgoPattern_shouldCalculateCorrectly() {
+        OffsetDateTime beforeCall = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime result = DateFilterParser.parseDate("60 days ago");
+        OffsetDateTime afterCall = OffsetDateTime.now(ZoneOffset.UTC);
+
+        assertThat(result).isNotNull();
+        OffsetDateTime expectedEarliest = beforeCall.minusDays(60).minusSeconds(1);
+        OffsetDateTime expectedLatest = afterCall.minusDays(60).plusSeconds(1);
+        assertThat(result).isBetween(expectedEarliest, expectedLatest);
+    }
+
+    @Test
+    void parseDate_withCapitalizedDays_shouldCalculateCorrectly() {
+        OffsetDateTime beforeCall = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime result = DateFilterParser.parseDate("30 Days");
+        OffsetDateTime afterCall = OffsetDateTime.now(ZoneOffset.UTC);
+
+        assertThat(result).isNotNull();
+        OffsetDateTime expectedEarliest = beforeCall.minusDays(30).minusSeconds(1);
+        OffsetDateTime expectedLatest = afterCall.minusDays(30).plusSeconds(1);
+        assertThat(result).isBetween(expectedEarliest, expectedLatest);
+    }
+
+    @Test
+    void parseDate_withSingularDay_shouldCalculateCorrectly() {
+        OffsetDateTime beforeCall = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime result = DateFilterParser.parseDate("1 day");
+        OffsetDateTime afterCall = OffsetDateTime.now(ZoneOffset.UTC);
+
+        assertThat(result).isNotNull();
+        OffsetDateTime expectedEarliest = beforeCall.minusDays(1).minusSeconds(1);
+        OffsetDateTime expectedLatest = afterCall.minusDays(1).plusSeconds(1);
+        assertThat(result).isBetween(expectedEarliest, expectedLatest);
+    }
+
+    @Test
+    void parseDate_withSingularDayAgo_shouldCalculateCorrectly() {
+        OffsetDateTime beforeCall = OffsetDateTime.now(ZoneOffset.UTC);
+        OffsetDateTime result = DateFilterParser.parseDate("1 day ago");
+        OffsetDateTime afterCall = OffsetDateTime.now(ZoneOffset.UTC);
+
+        assertThat(result).isNotNull();
+        OffsetDateTime expectedEarliest = beforeCall.minusDays(1).minusSeconds(1);
+        OffsetDateTime expectedLatest = afterCall.minusDays(1).plusSeconds(1);
+        assertThat(result).isBetween(expectedEarliest, expectedLatest);
     }
 
     @Test

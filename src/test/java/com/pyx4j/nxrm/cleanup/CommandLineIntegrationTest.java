@@ -17,7 +17,7 @@ class CommandLineIntegrationTest {
         CommandLine cmd = new CommandLine(args);
 
         // Test parsing with sort option
-        cmd.parseArgs("--config", "/dev/null", "--url", "https://nexus.example.com", "--username", "user", "--password", "pass", "--repo-sort", "size");
+        cmd.parseArgs("--rules", "/dev/null", "--url", "https://nexus.example.com", "--username", "user", "--password", "pass", "--repo-sort", "size");
 
         assertThat(args.nexusServerUrl).isEqualTo("https://nexus.example.com");
         assertThat(args.nexusUsername).isEqualTo("user");
@@ -31,7 +31,7 @@ class CommandLineIntegrationTest {
         CommandLine cmd = new CommandLine(args);
 
         // Test parsing without sort option (should use default)
-        cmd.parseArgs("--config", "/dev/null", "--url", "https://nexus.example.com", "--username", "user", "--password", "pass");
+        cmd.parseArgs("--rules", "/dev/null", "--url", "https://nexus.example.com", "--username", "user", "--password", "pass");
 
         assertThat(args.repositoriesSortBy).isEqualTo(SortBy.COMPONENTS); // Default value
     }
@@ -42,13 +42,13 @@ class CommandLineIntegrationTest {
         CommandLine cmd = new CommandLine(args);
 
         // Test that picocli can parse enum values correctly (case sensitive)
-        cmd.parseArgs("--config", "/dev/null", "--url", "https://nexus.example.com", "--repo-sort", "COMPONENTS");
+        cmd.parseArgs("--rules", "/dev/null", "--url", "https://nexus.example.com", "--repo-sort", "COMPONENTS");
         assertThat(args.repositoriesSortBy).isEqualTo(SortBy.COMPONENTS);
 
-        cmd.parseArgs("--config", "/dev/null", "--url", "https://nexus.example.com", "--repo-sort", "NAME");
+        cmd.parseArgs("--rules", "/dev/null", "--url", "https://nexus.example.com", "--repo-sort", "NAME");
         assertThat(args.repositoriesSortBy).isEqualTo(SortBy.NAME);
 
-        cmd.parseArgs("--config", "/dev/null", "--url", "https://nexus.example.com", "--repo-sort", "SIZE");
+        cmd.parseArgs("--rules", "/dev/null", "--url", "https://nexus.example.com", "--repo-sort", "SIZE");
         assertThat(args.repositoriesSortBy).isEqualTo(SortBy.SIZE);
     }
 
@@ -57,7 +57,7 @@ class CommandLineIntegrationTest {
         NxCleanupCommandArgs args = new NxCleanupCommandArgs();
         CommandLine cmd = new CommandLine(args);
 
-        cmd.parseArgs("--config", "/dev/null", "--url", "https://nexus.example.com",
+        cmd.parseArgs("--rules", "/dev/null", "--url", "https://nexus.example.com",
                 "--repository", "my-repo",
                 "--repository", "other-repo");
 
@@ -69,7 +69,7 @@ class CommandLineIntegrationTest {
         NxCleanupCommandArgs args = new NxCleanupCommandArgs();
         CommandLine cmd = new CommandLine(args);
 
-        cmd.parseArgs("--config", "/dev/null", "--url", "https://nexus.example.com",
+        cmd.parseArgs("--rules", "/dev/null", "--url", "https://nexus.example.com",
                 "--group", "com.example",
                 "--group", "org.springframework.*");
 
@@ -81,7 +81,7 @@ class CommandLineIntegrationTest {
         NxCleanupCommandArgs args = new NxCleanupCommandArgs();
         CommandLine cmd = new CommandLine(args);
 
-        cmd.parseArgs("--config", "/dev/null", "--url", "https://nexus.example.com",
+        cmd.parseArgs("--rules", "/dev/null", "--url", "https://nexus.example.com",
                 "--name", "spring-*",
                 "--name", "junit");
 
@@ -93,7 +93,7 @@ class CommandLineIntegrationTest {
         NxCleanupCommandArgs args = new NxCleanupCommandArgs();
         CommandLine cmd = new CommandLine(args);
 
-        cmd.parseArgs("--config", "/dev/null", "--url", "https://nexus.example.com",
+        cmd.parseArgs("--rules", "/dev/null", "--url", "https://nexus.example.com",
                 "--repository", "my-repo",
                 "--repository", "test-repo",
                 "--group", "com.example.*",
@@ -110,7 +110,7 @@ class CommandLineIntegrationTest {
         NxCleanupCommandArgs args = new NxCleanupCommandArgs();
         CommandLine cmd = new CommandLine(args);
 
-        cmd.parseArgs("--config", "/dev/null", "--url", "https://nexus.example.com",
+        cmd.parseArgs("--rules", "/dev/null", "--url", "https://nexus.example.com",
                 "--repository", "my-repo",
                 "--created-after", "30d",
                 "--group", "com.example",
