@@ -44,7 +44,7 @@ public final class CleanupRule {
      * @param action      The action to perform (delete or keep)
      * @param filters     The filters to apply
      */
-    public CleanupRule(@NonNull String name, @Nullable String description, boolean enabled, 
+    public CleanupRule(@NonNull String name, @Nullable String description, boolean enabled,
                        @NonNull String action, @NonNull CleanupFilters filters) {
         this.name = Objects.requireNonNull(name, "Rule name cannot be null");
         this.description = description;
@@ -227,12 +227,12 @@ public final class CleanupRule {
          */
         public boolean hasAtLeastOneFilter() {
             return (repositories != null && !repositories.isEmpty()) ||
-                   (formats != null && !formats.isEmpty()) ||
-                   (groups != null && !groups.isEmpty()) ||
-                   (names != null && !names.isEmpty()) ||
-                   (versions != null && !versions.isEmpty()) ||
-                   updated != null ||
-                   downloaded != null;
+                    (formats != null && !formats.isEmpty()) ||
+                    (groups != null && !groups.isEmpty()) ||
+                    (names != null && !names.isEmpty()) ||
+                    (versions != null && !versions.isEmpty()) ||
+                    updated != null ||
+                    downloaded != null;
         }
 
         @Override

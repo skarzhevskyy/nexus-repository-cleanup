@@ -12,10 +12,10 @@ class CleanupRuleSetTest {
     void cleanupRuleSet_withValidRules_shouldCreateCorrectly() {
         CleanupRule.CleanupFilters filters = new CleanupRule.CleanupFilters();
         filters.setRepositories(List.of("my-repo"));
-        
+
         CleanupRule rule = new CleanupRule("test-rule", "Test description", true, "delete", filters);
         List<CleanupRule> rules = List.of(rule);
-        
+
         CleanupRuleSet ruleSet = new CleanupRuleSet(rules);
 
         assertThat(ruleSet.getRules()).isEqualTo(rules);
@@ -26,7 +26,7 @@ class CleanupRuleSetTest {
     @Test
     void cleanupRuleSet_withDefaultConstructor_shouldAllowSettingRules() {
         CleanupRuleSet ruleSet = new CleanupRuleSet();
-        
+
         CleanupRule.CleanupFilters filters = new CleanupRule.CleanupFilters();
         filters.setNames(List.of("spring-*"));
         CleanupRule rule = new CleanupRule("my-rule", null, true, "delete", filters);
@@ -42,7 +42,7 @@ class CleanupRuleSetTest {
         CleanupRule.CleanupFilters filters = new CleanupRule.CleanupFilters();
         filters.setRepositories(List.of("repo1"));
         CleanupRule rule = new CleanupRule("test", "desc", true, "delete", filters);
-        
+
         CleanupRuleSet ruleSet1 = new CleanupRuleSet(List.of(rule));
         CleanupRuleSet ruleSet2 = new CleanupRuleSet(List.of(rule));
 
@@ -55,7 +55,7 @@ class CleanupRuleSetTest {
         CleanupRule.CleanupFilters filters = new CleanupRule.CleanupFilters();
         filters.setGroups(List.of("com.example"));
         CleanupRule rule = new CleanupRule("test-rule", "Description", false, "keep", filters);
-        
+
         CleanupRuleSet ruleSet = new CleanupRuleSet(List.of(rule));
         String str = ruleSet.toString();
 

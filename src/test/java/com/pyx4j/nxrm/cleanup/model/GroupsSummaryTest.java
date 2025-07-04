@@ -80,3 +80,4 @@ class GroupsSummaryTest {
                 .isInstanceOf(UnsupportedOperationException.class);
     }
 }
+

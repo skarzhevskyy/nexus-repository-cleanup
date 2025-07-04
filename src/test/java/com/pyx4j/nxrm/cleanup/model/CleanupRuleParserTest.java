@@ -43,7 +43,7 @@ class CleanupRuleParserTest {
         assertThat(rule.getDescription()).isEqualTo("Remove old components");
         assertThat(rule.isEnabled()).isTrue();
         assertThat(rule.getAction()).isEqualTo("delete");
-        
+
         CleanupRule.CleanupFilters filters = rule.getFilters();
         assertThat(filters.getRepositories()).containsExactly("maven-releases");
         assertThat(filters.getFormats()).containsExactly("maven2");
@@ -73,12 +73,12 @@ class CleanupRuleParserTest {
         CleanupRuleSet ruleSet = parser.parseFromString(yaml);
 
         assertThat(ruleSet.getRules()).hasSize(2);
-        
+
         CleanupRule rule1 = ruleSet.getRules().get(0);
         assertThat(rule1.getName()).isEqualTo("cleanup-snapshots");
         assertThat(rule1.getAction()).isEqualTo("delete");
         assertThat(rule1.getFilters().getUpdated()).isEqualTo("7 days");
-        
+
         CleanupRule rule2 = ruleSet.getRules().get(1);
         assertThat(rule2.getName()).isEqualTo("keep-recent-releases");
         assertThat(rule2.getAction()).isEqualTo("keep");
@@ -115,7 +115,7 @@ class CleanupRuleParserTest {
         assertThat(ruleSet.getRules()).hasSize(1);
         CleanupRule rule = ruleSet.getRules().get(0);
         CleanupRule.CleanupFilters filters = rule.getFilters();
-        
+
         assertThat(filters.getRepositories()).containsExactly("*-releases", "*-snapshots");
         assertThat(filters.getFormats()).containsExactly("maven2", "npm");
         assertThat(filters.getGroups()).containsExactly("com.example.*", "org.springframework.*");
@@ -138,7 +138,7 @@ class CleanupRuleParserTest {
 
         CleanupRuleSet ruleSet = parser.parseFromString(yaml);
         CleanupRule rule = ruleSet.getRules().get(0);
-        
+
         assertThat(rule.getFilters().getDownloaded()).isEqualTo("never");
     }
 
@@ -155,7 +155,7 @@ class CleanupRuleParserTest {
 
         CleanupRuleSet ruleSet = parser.parseFromString(yaml);
         CleanupRule rule = ruleSet.getRules().get(0);
-        
+
         assertThat(rule.getFilters().getUpdated()).isEqualTo("2025-03-01");
     }
 
@@ -368,10 +368,10 @@ class CleanupRuleParserTest {
     void parseDownloadedFilter_withValidDate_shouldReturnOffsetDateTime() {
         OffsetDateTime result = CleanupRuleParser.parseDownloadedFilter("30d");
         assertThat(result).isNotNull();
-        
+
         result = CleanupRuleParser.parseDownloadedFilter("30 days");
         assertThat(result).isNotNull();
-        
+
         result = CleanupRuleParser.parseDownloadedFilter("2024-01-01");
         assertThat(result).isNotNull();
     }

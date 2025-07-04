@@ -43,7 +43,7 @@ public final class CleanupRuleParser {
     @NonNull
     public CleanupRuleSet parseFromFile(@NonNull Path yamlFile) throws IOException {
         Objects.requireNonNull(yamlFile, "YAML file path cannot be null");
-        
+
         try (InputStream inputStream = Files.newInputStream(yamlFile)) {
             return parseFromStream(inputStream);
         }
@@ -60,7 +60,7 @@ public final class CleanupRuleParser {
     @NonNull
     public CleanupRuleSet parseFromStream(@NonNull InputStream inputStream) throws IOException {
         Objects.requireNonNull(inputStream, "Input stream cannot be null");
-        
+
         CleanupRuleSet ruleSet = yamlMapper.readValue(inputStream, CleanupRuleSet.class);
         validate(ruleSet);
         return ruleSet;
@@ -77,7 +77,7 @@ public final class CleanupRuleParser {
     @NonNull
     public CleanupRuleSet parseFromString(@NonNull String yamlContent) throws IOException {
         Objects.requireNonNull(yamlContent, "YAML content cannot be null");
-        
+
         CleanupRuleSet ruleSet = yamlMapper.readValue(yamlContent, CleanupRuleSet.class);
         validate(ruleSet);
         return ruleSet;
@@ -91,17 +91,17 @@ public final class CleanupRuleParser {
      */
     private void validate(@NonNull CleanupRuleSet ruleSet) {
         Objects.requireNonNull(ruleSet, "Rule set cannot be null");
-        
+
         List<CleanupRule> rules = ruleSet.getRules();
         if (rules == null || rules.isEmpty()) {
             throw new IllegalArgumentException("Rule set must contain at least one rule");
         }
 
         Set<String> ruleNames = new HashSet<>();
-        
+
         for (CleanupRule rule : rules) {
             validateRule(rule);
-            
+
             // Check for duplicate rule names
             String ruleName = rule.getName();
             if (ruleNames.contains(ruleName)) {
@@ -119,7 +119,7 @@ public final class CleanupRuleParser {
      */
     private void validateRule(@NonNull CleanupRule rule) {
         Objects.requireNonNull(rule, "Rule cannot be null");
-        
+
         // Validate rule name
         if (rule.getName() == null || rule.getName().trim().isEmpty()) {
             throw new IllegalArgumentException("Rule must have a non-empty name");
@@ -128,8 +128,8 @@ public final class CleanupRuleParser {
         // Validate action
         String action = rule.getAction();
         if (action == null || !VALID_ACTIONS.contains(action.toLowerCase())) {
-            throw new IllegalArgumentException("Invalid action '" + action + 
-                "'. Must be one of: " + VALID_ACTIONS);
+            throw new IllegalArgumentException("Invalid action '" + action +
+                    "'. Must be one of: " + VALID_ACTIONS);
         }
 
         // Validate filters
@@ -139,8 +139,8 @@ public final class CleanupRuleParser {
         }
 
         if (!filters.hasAtLeastOneFilter()) {
-            throw new IllegalArgumentException("Rule '" + rule.getName() + 
-                "' must have at least one filter specified");
+            throw new IllegalArgumentException("Rule '" + rule.getName() +
+                    "' must have at least one filter specified");
         }
 
         // Validate date filters
@@ -164,8 +164,8 @@ public final class CleanupRuleParser {
         try {
             DateFilterParser.parseDate(dateFilter);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid " + filterType + " filter in rule '" + 
-                ruleName + "': " + e.getMessage(), e);
+            throw new IllegalArgumentException("Invalid " + filterType + " filter in rule '" +
+                    ruleName + "': " + e.getMessage(), e);
         }
     }
 
@@ -200,12 +200,12 @@ public final class CleanupRuleParser {
     @NonNull
     public static OffsetDateTime parseDownloadedFilter(@NonNull String downloadedFilter) {
         Objects.requireNonNull(downloadedFilter, "Downloaded filter cannot be null");
-        
+
         String trimmed = downloadedFilter.trim();
         if (NEVER.equalsIgnoreCase(trimmed)) {
             throw new IllegalArgumentException("Use isNeverDownloaded() to check for 'never' value");
         }
-        
+
         return DateFilterParser.parseDate(trimmed);
     }
 

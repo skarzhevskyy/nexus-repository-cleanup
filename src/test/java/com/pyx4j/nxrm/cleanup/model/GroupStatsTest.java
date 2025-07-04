@@ -38,3 +38,4 @@ class GroupStatsTest {
         assertThat(stats.getSizeBytes()).isEqualTo(768);
     }
 }
+

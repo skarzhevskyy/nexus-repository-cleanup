@@ -46,7 +46,7 @@ class CleanupRuleTest {
     void cleanupRule_equals_shouldCompareAllFields() {
         CleanupRule.CleanupFilters filters1 = new CleanupRule.CleanupFilters();
         filters1.setRepositories(List.of("repo1"));
-        
+
         CleanupRule.CleanupFilters filters2 = new CleanupRule.CleanupFilters();
         filters2.setRepositories(List.of("repo1"));
 
@@ -61,7 +61,7 @@ class CleanupRuleTest {
     void cleanupRule_toString_shouldIncludeAllFields() {
         CleanupRule.CleanupFilters filters = new CleanupRule.CleanupFilters();
         filters.setGroups(List.of("com.example"));
-        
+
         CleanupRule rule = new CleanupRule("test-rule", "Description", false, "keep", filters);
         String str = rule.toString();
 
@@ -75,7 +75,7 @@ class CleanupRuleTest {
     @Test
     void cleanupFilters_hasAtLeastOneFilter_shouldReturnTrueWhenFilterPresent() {
         CleanupRule.CleanupFilters filters = new CleanupRule.CleanupFilters();
-        
+
         assertThat(filters.hasAtLeastOneFilter()).isFalse();
 
         filters.setRepositories(List.of("repo1"));
