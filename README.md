@@ -36,33 +36,92 @@ Nexus Repository Manager’s built-in Cleanup Policies do not support filtering 
 
 ### Configuration
 
-Create a `cleanup-config.yml` file. This file defines the cleanup policies and their filters.:
+Create a `cleanup-rules.yml` file that defines the cleanup policies and their filters. The YAML format supports defining multiple cleanup rules, each with customizable filters.
 
-TBD
+#### YAML Format
+
 ```yaml
-policies:
-  - name: never-downloaded
-    description: Remove artifacts that have never been downloaded and older than 30 days
-    repositories:
-      - maven-releases
-    filters:
-      - downloaded: never
-      - createdBefore: 30d
+rules:
+  - name: "rule-name"                    # Required: Unique name for the rule
+    description: "Optional description"   # Optional: Human-readable description
+    enabled: true                        # Optional: Whether rule is enabled (default: true)
+    action: delete                       # Optional: "delete" (default) or "keep"
+    filters:                            # Required: At least one filter must be specified
+      repositories:                     # Optional: Repository name patterns (supports wildcards)
+        - "maven-*"
+        - "npm-releases"
+      formats:                          # Optional: Repository format filters
+        - "maven2"
+        - "npm"
+      groups:                           # Optional: Component group patterns (supports wildcards)
+        - "com.example.*"
+        - "org.springframework.*"
+      names:                            # Optional: Component name patterns (supports wildcards)
+        - "spring-*"
+        - "*-test"
+      versions:                         # Optional: Version patterns (supports wildcards)
+        - "1.*"
+        - "*-SNAPSHOT"
+      updated: "90 days"                # Optional: Components last updated before this time
+      downloaded: "60 days"             # Optional: Components last downloaded before this time or "never"
+```
 
-  - name: old-snapshots
-    description: Remove Maven snapshots older than 30 days
-    repositories:
-      - maven-snapshots
-    filters:
-      - createdBefore: 30d 
+#### Date Filter Formats
 
-  - name: large-packages
-    description: Remove packages larger than 100 MB
-    repositories:
-      - docker-hosted
+The `updated` and `downloaded` filters support multiple date formats:
+
+- **Relative formats**: `"30d"`, `"30 days"`, `"30 Days"`, `"30 days ago"`
+- **Absolute ISO dates**: `"2025-03-01"`, `"2025-03-01T00:00:00Z"`
+- **Special values**: `downloaded: "never"` for components that have never been downloaded
+
+#### Examples
+
+##### Example 1: Standard Rule with Age and Download Filters
+
+```yaml
+rules:
+  - name: "cleanup-stale-components"
+    description: >
+      Remove components last modified more than 90 days ago
+      that have not been downloaded in the last 60 days
+    enabled: true
+    action: delete
     filters:
-      - createdBefore: 90d
-      - artefactMaxSize: 100Mb
+      repositories:
+        - "maven-releases"
+        - "maven-snapshots"
+      formats:
+        - "maven2"
+      groups:
+        - "com.example.*"
+        - "org.springframework.*"
+      names:
+        - "spring-*"
+        - "*-deprecated"
+      versions:
+        - "1.*"
+        - "*-SNAPSHOT"
+      updated: "90 days"
+      downloaded: "60 days"
+```
+
+##### Example 2: Never Downloaded Components
+
+```yaml
+rules:
+  - name: "cleanup-never-downloaded"
+    description: >
+      Remove components that have never been downloaded
+      and are older than 30 days
+    enabled: true
+    action: delete
+    filters:
+      repositories:
+        - "maven-releases"
+      formats:
+        - "maven2"
+      updated: "30 days ago"
+      downloaded: "never"
 ```
 
 ### Usage
