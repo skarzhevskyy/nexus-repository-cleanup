@@ -1,6 +1,5 @@
 package com.pyx4j.nxrm.cleanup;
 
-import java.util.List;
 import java.util.concurrent.Callable;
 
 import com.pyx4j.nxrm.cleanup.model.SortBy;
@@ -50,56 +49,6 @@ public class NxCleanupCommandArgs implements Callable<Integer> {
     public String proxyUrl;
 
     @CommandLine.Option(
-            names = {"--created-before"},
-            description = "Filter components created before this date (ISO-8601 format or 'Nd' for N days ago)")
-    public String createdBefore;
-
-    @CommandLine.Option(
-            names = {"--created-after"},
-            description = "Filter components created after this date (ISO-8601 format or 'Nd' for N days ago)")
-    public String createdAfter;
-
-    @CommandLine.Option(
-            names = {"--updated-before"},
-            description = "Filter components updated before this date (ISO-8601 format or 'Nd' for N days ago)")
-    public String updatedBefore;
-
-    @CommandLine.Option(
-            names = {"--updated-after"},
-            description = "Filter components updated after this date (ISO-8601 format or 'Nd' for N days ago)")
-    public String updatedAfter;
-
-    @CommandLine.Option(
-            names = {"--downloaded-before"},
-            description = "Filter components downloaded before this date (ISO-8601 format or 'Nd' for N days ago)")
-    public String downloadedBefore;
-
-    @CommandLine.Option(
-            names = {"--downloaded-after"},
-            description = "Filter components downloaded after this date (ISO-8601 format or 'Nd' for N days ago)")
-    public String downloadedAfter;
-
-    @CommandLine.Option(
-            names = {"--never-downloaded"},
-            description = "Only include components that have never been downloaded")
-    public boolean neverDownloaded;
-
-    @CommandLine.Option(
-            names = {"--repository"},
-            description = "Filter components by repository name (supports wildcards *, ?). Can be specified multiple times (OR logic)")
-    public List<String> repositories;
-
-    @CommandLine.Option(
-            names = {"--group"},
-            description = "Filter components by group (supports wildcards *, ?). Can be specified multiple times (OR logic)")
-    public List<String> groups;
-
-    @CommandLine.Option(
-            names = {"--name"},
-            description = "Filter components by name (supports wildcards *, ?). Can be specified multiple times (OR logic)")
-    public List<String> names;
-
-    @CommandLine.Option(
             names = {"--report-repositories-summary"},
             description = "Report repositories summary")
     public boolean reportRepositoriesSummary;
@@ -138,9 +87,7 @@ public class NxCleanupCommandArgs implements Callable<Integer> {
 
 
     public Integer call() throws Exception {
-        int exitCode = 0;
-        exitCode = new NxCleanupJob(this).execute();
-        return exitCode;
+        return new NxCleanupJob(this).execute();
     }
 
 }
