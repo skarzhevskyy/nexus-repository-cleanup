@@ -3,6 +3,7 @@ package com.pyx4j.nxrm.cleanup.model;
 import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jspecify.annotations.NonNull;
 
@@ -10,6 +11,7 @@ import org.jspecify.annotations.NonNull;
  * Represents a collection of cleanup rules loaded from a YAML file.
  * Contains a list of rules that define cleanup policies.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public final class CleanupRuleSet {
 
     @JsonProperty("rules")
