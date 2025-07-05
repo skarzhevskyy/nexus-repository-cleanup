@@ -186,7 +186,22 @@ The following environment variables are supported:
 
 ### Report Generation
 
-The tool provides comprehensive reporting capabilities:
+The tool provides comprehensive reporting capabilities that are especially important for `--dry-run` executions to preview and validate removal of data before performing actual cleanup operations.
+
+#### Component Output
+Generate a detailed list of components that match your cleanup rules. This is particularly valuable when combined with `--dry-run` to preview what would be deleted:
+
+```bash
+# Preview components to be removed (dry-run mode)
+./gradlew run --args="--rules cleanup-rules.yml --dry-run --output-component components-to-be-removed.json"
+
+# Save filtered components list to file in JSON or CSV format
+./gradlew run --args="--rules cleanup-rules.yml --output-component components.json"
+./gradlew run --args="--rules cleanup-rules.yml --output-component components.csv"
+
+# Combine with authentication for complete workflow
+./gradlew run --args="--rules cleanup-rules.yml --url https://nexus.example.com --username admin --password yourpassword --dry-run --output-component preview.json"
+```
 
 #### Repository Summary Report
 ```bash
@@ -213,10 +228,6 @@ The tool provides comprehensive reporting capabilities:
 # Save report to JSON or CSV file
 ./gradlew run --args="--rules cleanup-rules.yml --report-repositories-summary --report-output-file report.json"
 ./gradlew run --args="--rules cleanup-rules.yml --report-repositories-summary --report-output-file report.csv"
-
-# Save filtered components list to file
-./gradlew run --args="--rules cleanup-rules.yml --output-component components.json"
-./gradlew run --args="--rules cleanup-rules.yml --output-component components.csv"
 ```
 
 ### Usage
