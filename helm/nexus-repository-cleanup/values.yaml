@@ -1,0 +1,99 @@
+# Default values for nexus-repository-cleanup.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  # -- Registry to pull image from
+  registry: ghcr.io
+  # -- Image name to pull
+  repository: skarzhevskyy/nexus-repository-cleanup
+  tag: ""
+  pullPolicy: IfNotPresent
+
+cronjob:
+  # -- Schedules the job to run using cron notation
+  schedule: '0 1 * * *'  # At 01:00 every day
+  # -- You can specify a time zone for a CronJob by setting timeZone to the name of a valid time zone. (starting with k8s 1.27) <https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#time-zones>
+  timeZone: ''  # see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for valid names
+  # -- If it is set to true, all subsequent executions are suspended. This setting does not apply to already started executions.
+  suspend: false
+  # -- Annotations to set on the cronjob
+  annotations: {}
+  # -- Labels to set on the cronjob
+  labels: {}
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nexusRepositoryCleanup:
+  rules: []   # With context of cleanup-rules.yml to create cleanupRules config map
+  # or rulesRef to config map with rules
+  rulesRef: ""   # optional if present should map to volume mount and added as '--rules' argument to app
+  nexusUrl: ""
+  credentialsSecretName: "" # optional with username password or token values that will be mapped to environment variables.
+  otherArguments: "--report-top-groups --report-repositories-summary" # to be passed to application. defaults --report-top-groups --report-repositories-summary
+
+env: []
+# Example:
+# env:
+#   - name: MY_ENV_VAR
+#     value: "my-value"
+#   - name: SECRET_ENV_VAR
+#     valueFrom:
+#       secretKeyRef:
+#         name: my-secret
+#         key: secret-key
+
+envFrom: []
+# Example:
+# envFrom:
+#   - configMapRef:
+#       name: my-configmap
+#   - secretRef:
+#       name: my-secret
+
+# Optional: serviceAccount, RBAC
+serviceAccount:
+  create: false
+  name: default
+
+pod:
+  # -- Annotations to set on the pod
+  annotations: {}
+  # -- Labels to set on the pod
+  labels: {}
+
+# Pod security context and tolerations, node selectors
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# -- Security contexts
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+# Image pull secrets
+imagePullSecrets: []
+# - name: myregistrykey
+
+nameOverride: ""
+fullnameOverride: ""

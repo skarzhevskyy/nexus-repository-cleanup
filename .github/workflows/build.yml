@@ -72,3 +72,20 @@ jobs:
           ./gradlew jib -Djib.console=plain \
             -Pcontainer.image.registry="ghcr.io/${{ github.repository_owner }}" \
             -Pcontainer.image.name="${{ github.event.repository.name }}"
+
+      - name: Package and Publish Helm Chart
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "Packaging and publishing Helm chart to GitHub Container Registry..."
+          
+          # Install Helm
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          
+          # Package the chart
+          helm package helm/nexus-repository-cleanup --version ${{ github.run_number }} --app-version latest
+          
+          # Login to GHCR for Helm
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+          
+          # Push the chart
+          helm push nexus-repository-cleanup-${{ github.run_number }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
