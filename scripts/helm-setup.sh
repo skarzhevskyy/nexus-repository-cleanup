@@ -17,6 +17,11 @@ NC='\033[0m' # No Color
 NAMESPACE="default"
 SECRET_NAME="nexus-credentials"
 RELEASE_NAME="nexus-cleanup"
+RULES_CONFIGMAP_NAME="nexus-cleanup-rules"
+DRY_RUN="true"
+CHART_URL=./helm/nexus-repository-cleanup
+CHART_GHCR_URL="oci://ghcr.io/skarzhevskyy/charts/nexus-repository-cleanup"
+CHART_VERSION="0.0.1-SNAPSHOT"
 
 print_usage() {
     echo "Usage: $0 [OPTIONS]"
@@ -30,7 +35,10 @@ print_usage() {
     echo "  --password PASSWORD          Nexus password (required)"
     echo "  --token TOKEN                Nexus token (alternative to username/password)"
     echo "  --values-file FILE           Custom values file (optional)"
-    echo "  --dry-run                    Run in dry-run mode (recommended for first time)"
+    echo "  --rules-file FILE            Cleanup rules file (optional)"
+    echo "  --dry-run  [true|false]      Run in dry-run mode (recommended for first time)"
+    echo "  --chart-ghcr                 Use Helm chart published in GitHub Container Registry"
+    echo "  --chart-version              Version of the Helm chart to use (default: ${CHART_VERSION}), will use GitHub Container Registry"
     echo "  -h, --help                   Show this help message"
     echo ""
     echo "Examples:"
@@ -74,9 +82,24 @@ while [[ $# -gt 0 ]]; do
             VALUES_FILE="$2"
             shift 2
             ;;
+        --rules-file)
+            RULES_FILE="$2"
+            shift 2
+            ;;
         --dry-run)
-            DRY_RUN=true
+            DRY_RUN="$2"
+            shift 2
+            ;;
+        --chart-ghcr)
+            CHART_URL="${CHART_GHCR_URL}"
+            echo -e "${YELLOW}Using Helm chart from GitHub Container Registry ${CHART_URL} ${NC}"
             shift
+            ;;
+        --chart-version)
+            CHART_VERSION="$2"
+            CHART_URL="${CHART_GHCR_URL}"
+            echo -e "${YELLOW}Using Helm chart version ${CHART_VERSION} from GitHub Container Registry ${CHART_URL} ${NC}"
+            shift 2
             ;;
         -h|--help)
             print_usage
@@ -159,15 +182,35 @@ else
     echo -e "${GREEN}✓ Created secret with username/password authentication${NC}"
 fi
 
+if [[ -n "$RULES_FILE" ]]; then
+    if [[ ! -f "$RULES_FILE" ]]; then
+        echo -e "${RED}Error: Rules file $RULES_FILE not found${NC}"
+        exit 1
+    fi
+    echo -e "${BLUE}Using custom rules file: $RULES_FILE${NC}"
+    kubectl create configmap "${RULES_CONFIGMAP_NAME}" \
+        --from-file=cleanup-rules.yml="$RULES_FILE" \
+        -n "$NAMESPACE" \
+        --dry-run=client -o yaml | kubectl apply -f -
+    echo -e "${GREEN}✓ Created/updated configmap ${RULES_CONFIGMAP_NAME} with rules${NC}"
+fi
+
 # Build helm command
-HELM_CMD="helm install $RELEASE_NAME ./helm/nexus-repository-cleanup"
-HELM_CMD="$HELM_CMD --namespace $NAMESPACE"
-HELM_CMD="$HELM_CMD --set nexusRepositoryCleanup.nexusUrl=$NEXUS_URL"
-HELM_CMD="$HELM_CMD --set nexusRepositoryCleanup.credentialsSecretName=$SECRET_NAME"
+HELM_CMD="helm upgrade ${RELEASE_NAME} ${CHART_URL} --version ${CHART_VERSION}"
+HELM_CMD="$HELM_CMD --install --atomic --history-max 3"
+HELM_CMD="$HELM_CMD --namespace ${NAMESPACE}"
+HELM_CMD="$HELM_CMD --set nexusRepositoryCleanup.nexusUrl=${NEXUS_URL}"
+HELM_CMD="$HELM_CMD --set nexusRepositoryCleanup.credentialsSecretName=${SECRET_NAME}"
+if [[ -n "$RULES_FILE" ]]; then
+    HELM_CMD="$HELM_CMD --set nexusRepositoryCleanup.existingCleanupRulesConfigMapName=${RULES_CONFIGMAP_NAME}"
+fi
 
 if [[ "$DRY_RUN" == "true" ]]; then
-    HELM_CMD="$HELM_CMD --set nexusRepositoryCleanup.otherArguments='--report-top-groups --report-repositories-summary --dry-run'"
+    HELM_CMD="$HELM_CMD --set nexusRepositoryCleanup.dryRun=true"
     echo -e "${YELLOW}Note: Adding --dry-run flag for safety${NC}"
+else
+    HELM_CMD="$HELM_CMD --set nexusRepositoryCleanup.dryRun=false"
+    echo -e "${YELLOW}Note: dry-run flag safety is disable${NC}"
 fi
 
 if [[ -n "$VALUES_FILE" ]]; then

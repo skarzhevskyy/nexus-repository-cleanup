@@ -81,11 +81,13 @@ jobs:
           # Install Helm
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
           
+          VERSION="0.0.1-SNAPSHOT"
+          
           # Package the chart
-          helm package helm/nexus-repository-cleanup --version ${{ github.run_number }} --app-version latest
+          helm package helm/nexus-repository-cleanup --version "${VERSION}" --app-version "${VERSION}"
           
           # Login to GHCR for Helm
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
           
           # Push the chart
-          helm push nexus-repository-cleanup-${{ github.run_number }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+          helm push "nexus-repository-cleanup-${VERSION}".tgz oci://ghcr.io/${{ github.repository_owner }}/charts

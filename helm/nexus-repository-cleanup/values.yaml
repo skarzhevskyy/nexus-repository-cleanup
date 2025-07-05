@@ -2,6 +2,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+nameOverride: ""
+fullnameOverride: ""
+
 image:
   # -- Registry to pull image from
   registry: ghcr.io
@@ -9,6 +12,19 @@ image:
   repository: skarzhevskyy/nexus-repository-cleanup
   tag: ""
   pullPolicy: IfNotPresent
+
+# Image pull secrets
+imagePullSecrets: []
+# - name: myregistrykey
+
+nexusRepositoryCleanup:
+  rules: []   # With context of cleanup-rules.yml to create cleanupRules config map
+  # or ref to an existing config map with rules created and maintained separately
+  existingCleanupRulesConfigMapName: ""
+  nexusUrl: ""
+  credentialsSecretName: "" # optional with username password or token values that will be mapped to environment variables.
+  dryRun: true # if true, the job will not delete any components, but will report what would be deleted.
+  otherArguments: "--report-repositories-summary --report-top-groups" # to be passed to application.
 
 cronjob:
   # -- Schedules the job to run using cron notation
@@ -21,37 +37,29 @@ cronjob:
   annotations: {}
   # -- Labels to set on the cronjob
   labels: {}
+  # -- Set to Never to restart the job when the pod fails or to OnFailure to restart when a container fails
+  podRestartPolicy: Never
+  # -- Number of times to retry running the pod before considering the job as being failed
+  jobBackoffLimit: 1
+  # -- Amount of failed jobs to keep in history
+  failedJobsHistoryLimit: ''
+  # -- Amount of completed jobs to keep in history
+  successfulJobsHistoryLimit: ''
+  # -- Time to keep the job after it finished before automatically deleting it, Defaults to 1 day (24 hours).
+  ttlSecondsAfterFinished: 86400
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+# See also env.JAVA_TOOL_OPTIONS
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 512Mi
 
-nexusRepositoryCleanup:
-  rules: []   # With context of cleanup-rules.yml to create cleanupRules config map
-  # or rulesRef to config map with rules
-  rulesRef: ""   # optional if present should map to volume mount and added as '--rules' argument to app
-  nexusUrl: ""
-  credentialsSecretName: "" # optional with username password or token values that will be mapped to environment variables.
-  otherArguments: "--report-top-groups --report-repositories-summary" # to be passed to application. defaults --report-top-groups --report-repositories-summary
-
-env: []
-# Example:
-# env:
-#   - name: MY_ENV_VAR
-#     value: "my-value"
-#   - name: SECRET_ENV_VAR
-#     valueFrom:
-#       secretKeyRef:
-#         name: my-secret
-#         key: secret-key
+env:
+  - name: JAVA_TOOL_OPTIONS
+    value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
 
 envFrom: []
 # Example:
@@ -91,9 +99,3 @@ containerSecurityContext:
   capabilities:
     drop: ["ALL"]
 
-# Image pull secrets
-imagePullSecrets: []
-# - name: myregistrykey
-
-nameOverride: ""
-fullnameOverride: ""

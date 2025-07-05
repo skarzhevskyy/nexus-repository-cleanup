@@ -4,24 +4,18 @@ This Helm chart deploys the Nexus Repository Cleanup application as a Kubernetes
 
 ## Prerequisites
 
-- Kubernetes cluster version >= 1.30
+- Kubernetes cluster version >= 1.25
 - Helm 3.0+
-- Access to a Nexus Repository Manager instance
+- Access to a Nexus Repository Manager instance via RESET API
 - Nexus user account with appropriate cleanup permissions
 
 ## Installation
 
 ### Quick Start
 
-1. Add the Helm repository (coming soon - after GitHub Actions implementation):
+1. Install the chart:
 ```bash
-helm repo add nexus-cleanup https://ghcr.io/skarzhevskyy/charts
-helm repo update
-```
-
-2. Install the chart:
-```bash
-helm install my-nexus-cleanup nexus-cleanup/nexus-repository-cleanup \
+helm install my-nexus-cleanup oci://ghcr.io/skarzhevskyy/charts/nexus-repository-cleanup --version 0.0.1 \
   --set nexusRepositoryCleanup.nexusUrl=https://nexus.example.com \
   --set nexusRepositoryCleanup.credentialsSecretName=nexus-credentials
 ```
@@ -34,23 +28,24 @@ git clone https://github.com/skarzhevskyy/nexus-repository-cleanup.git
 cd nexus-repository-cleanup
 ```
 
-2. **Quick Setup (Recommended)**: Use the provided setup script:
+2. **Quick Development Setup**: Use the provided setup script:
 ```bash
 # Basic installation with username/password
-./scripts/setup.sh \
+./scripts/helm-setup.sh \
   --nexus-url https://nexus.example.com \
   --username your-nexus-username \
   --password your-nexus-password \
-  --dry-run
+  --rules-file examples/cleanup-rules.yml \
+  --dry-run true
 
 # Installation with token authentication
-./scripts/setup.sh \
+./scripts/helm-setup.sh \
   --nexus-url https://nexus.example.com \
   --token your-nexus-token \
-  --dry-run
+  --dry-run true
 
 # Custom installation with values file
-./scripts/setup.sh \
+./scripts/helm-setup.sh \
   --nexus-url https://nexus.example.com \
   --username admin \
   --password secret123 \
@@ -59,15 +54,20 @@ cd nexus-repository-cleanup
   --release-name my-cleanup
 ```
 
-3. **Manual Installation**: Create credentials secret and install manually:
+3. **Manual Installation (Recommended)**: Create credentials secret and install manually:
 ```bash
 kubectl create secret generic nexus-credentials \
   --from-literal=username=your-nexus-username \
   --from-literal=password=your-nexus-password
 
-helm install my-nexus-cleanup ./helm/nexus-repository-cleanup \
+kubectl create configmap nexus-cleanup-rules \
+        --from-file=cleanup-rules.yml="examples/cleanup-rules.yml"
+
+helm install my-nexus-cleanup oci://ghcr.io/skarzhevskyy/charts/nexus-repository-cleanup --version 0.0.1 \
   --set nexusRepositoryCleanup.nexusUrl=https://nexus.example.com \
-  --set nexusRepositoryCleanup.credentialsSecretName=nexus-credentials
+  --set nexusRepositoryCleanup.credentialsSecretName=nexus-credentials \
+  --set nexusRepositoryCleanup.existingCleanupRulesConfigMapName=nexus-cleanup-rules \
+  --set nexusRepositoryCleanup.dryRun=true
 ```
 
 ## Configuration
@@ -87,6 +87,8 @@ The following table lists the configurable parameters and their default values:
 | `cronjob.suspend` | Suspend cron job execution | `false` |
 | `nexusRepositoryCleanup.nexusUrl` | Nexus Repository Manager URL | `""` |
 | `nexusRepositoryCleanup.credentialsSecretName` | Name of secret containing Nexus credentials | `""` |
+| `nexusRepositoryCleanup.existingCleanupRulesConfigMapName` | Name of existing ConfigMap with cleanup rules | `""` |
+| `nexusRepositoryCleanup.dryRun` | Enable dry run mode (no actual deletions) | `true` |
 | `nexusRepositoryCleanup.otherArguments` | Additional CLI arguments | `--report-top-groups --report-repositories-summary` |
 
 ### Cleanup Rules Configuration
@@ -135,7 +137,7 @@ Create your own ConfigMap and reference it:
 nexusRepositoryCleanup:
   nexusUrl: "https://nexus.example.com"
   credentialsSecretName: "nexus-credentials"
-  rulesRef: "my-cleanup-rules-configmap"
+  existingCleanupRulesConfigMapName: "my-cleanup-rules-configmap"
 ```
 
 ### Security Configuration
@@ -168,7 +170,7 @@ resources:
     memory: 512Mi
   requests:
     cpu: 100m
-    memory: 128Mi
+    memory: 512Mi
 ```
 
 ### Environment Variables
@@ -208,7 +210,7 @@ image:
 
 cronjob:
   schedule: "0 2 * * *"  # 2 AM daily
-  timeZone: "America/New_York"
+  timeZone: "America/Toronto"
   suspend: false
 
 resources:
@@ -217,7 +219,7 @@ resources:
     memory: 512Mi
   requests:
     cpu: 100m
-    memory: 128Mi
+    memory: 512Mi
 
 nexusRepositoryCleanup:
   nexusUrl: "https://nexus.company.com"

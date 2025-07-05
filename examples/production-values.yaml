@@ -2,6 +2,10 @@
 # This file demonstrates a complete production configuration
 # Copy and modify according to your environment
 
+# Override names
+nameOverride: ""
+fullnameOverride: ""
+
 # Image configuration
 image:
   registry: ghcr.io
@@ -9,11 +13,15 @@ image:
   tag: "latest"  # Use specific version tags in production
   pullPolicy: IfNotPresent
 
+# Image pull secrets (if using private registry)
+imagePullSecrets: []
+# - name: my-registry-secret
+
 # CronJob scheduling configuration
 cronjob:
   # Run every night at 2 AM in New York timezone
   schedule: '0 2 * * *'
-  timeZone: 'America/New_York'
+  timeZone: 'America/Montreal'
   suspend: false
   annotations:
     description: "Automated Nexus repository cleanup"
@@ -22,15 +30,6 @@ cronjob:
     environment: "production"
     component: "cleanup"
 
-# Resource management
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 100m
-    memory: 128Mi
-
 # Nexus cleanup configuration
 nexusRepositoryCleanup:
   # Your Nexus Repository Manager URL
@@ -38,10 +37,10 @@ nexusRepositoryCleanup:
   
   # Secret containing Nexus credentials (create separately)
   credentialsSecretName: "nexus-prod-credentials"
-  
+
+  dryRun : true # Set to false after validating the cleanup rules
   # Additional command line arguments
-  # Note: --dry-run is included for safety - remove after validation
-  otherArguments: "--report-top-groups --report-repositories-summary --dry-run"
+  otherArguments: "--report-top-groups --report-repositories-summary"
   
   # Cleanup rules defined inline
   rules:
@@ -97,18 +96,21 @@ nexusRepositoryCleanup:
           - "test-*"
         updated: "14 days"
 
+# Resource management, See also env.JAVA_TOOL_OPTIONS
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 512Mi
+
 # Additional environment variables
 env:
-  - name: JAVA_OPTS
-    value: "-Xmx256m -Xms128m"
+  - name: JAVA_TOOL_OPTIONS
+    value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
   - name: LOG_LEVEL
     value: "INFO"
-
-# Environment variables from ConfigMaps/Secrets
-envFrom:
-  - configMapRef:
-      name: nexus-cleanup-config
-      optional: true
 
 # Service account configuration
 serviceAccount:
@@ -128,7 +130,6 @@ pod:
 # Node scheduling
 nodeSelector:
   kubernetes.io/arch: amd64
-  node-type: "worker"
 
 tolerations:
   - key: "dedicated"
@@ -145,11 +146,3 @@ affinity:
         - key: node-type
           operator: In
           values: ["utility"]
-
-# Image pull secrets (if using private registry)
-imagePullSecrets: []
-# - name: my-registry-secret
-
-# Override names
-nameOverride: ""
-fullnameOverride: ""

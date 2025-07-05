@@ -18,10 +18,20 @@ spec:
   {{- end }}
   suspend: {{ .Values.cronjob.suspend }}
   concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 1
+  {{- with .Values.cronjob.failedJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ . }}
+  {{- end }}
+  {{- with .Values.cronjob.successfulJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ . }}
+  {{- end }}
   jobTemplate:
     spec:
+      {{- if .Values.cronjob.ttlSecondsAfterFinished }}
+      ttlSecondsAfterFinished: {{ .Values.cronjob.ttlSecondsAfterFinished }}
+      {{- end }}
+      {{- if .Values.cronjob.jobBackoffLimit }}
+      backoffLimit: {{ .Values.cronjob.jobBackoffLimit }}
+      {{- end }}
       template:
         metadata:
           labels:
@@ -42,7 +52,7 @@ spec:
           serviceAccountName: {{ include "nexus-repository-cleanup.serviceAccountName" . }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          restartPolicy: OnFailure
+          restartPolicy: {{ .Values.cronjob.podRestartPolicy }}
           containers:
             - name: {{ .Chart.Name }}
               securityContext:
@@ -82,7 +92,7 @@ spec:
               envFrom:
                 {{- toYaml . | nindent 16 }}
               {{- end }}
-              {{- if or .Values.nexusRepositoryCleanup.rules .Values.nexusRepositoryCleanup.rulesRef }}
+              {{- if or .Values.nexusRepositoryCleanup.rules .Values.nexusRepositoryCleanup.existingCleanupRulesConfigMapName }}
               volumeMounts:
                 - name: cleanup-rules
                   mountPath: /app/config
@@ -90,7 +100,7 @@ spec:
               {{- end }}
               resources:
                 {{- toYaml .Values.resources | nindent 16 }}
-          {{- if or .Values.nexusRepositoryCleanup.rules .Values.nexusRepositoryCleanup.rulesRef }}
+          {{- if or .Values.nexusRepositoryCleanup.rules .Values.nexusRepositoryCleanup.existingCleanupRulesConfigMapName }}
           volumes:
             - name: cleanup-rules
               configMap:
