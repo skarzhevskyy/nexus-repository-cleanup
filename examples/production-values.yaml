@@ -1,0 +1,155 @@
+# Example production values for nexus-repository-cleanup Helm chart
+# This file demonstrates a complete production configuration
+# Copy and modify according to your environment
+
+# Image configuration
+image:
+  registry: ghcr.io
+  repository: skarzhevskyy/nexus-repository-cleanup
+  tag: "latest"  # Use specific version tags in production
+  pullPolicy: IfNotPresent
+
+# CronJob scheduling configuration
+cronjob:
+  # Run every night at 2 AM in New York timezone
+  schedule: '0 2 * * *'
+  timeZone: 'America/New_York'
+  suspend: false
+  annotations:
+    description: "Automated Nexus repository cleanup"
+    owner: "platform-team"
+  labels:
+    environment: "production"
+    component: "cleanup"
+
+# Resource management
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Nexus cleanup configuration
+nexusRepositoryCleanup:
+  # Your Nexus Repository Manager URL
+  nexusUrl: "https://nexus.company.com"
+  
+  # Secret containing Nexus credentials (create separately)
+  credentialsSecretName: "nexus-prod-credentials"
+  
+  # Additional command line arguments
+  # Note: --dry-run is included for safety - remove after validation
+  otherArguments: "--report-top-groups --report-repositories-summary --dry-run"
+  
+  # Cleanup rules defined inline
+  rules:
+    - name: "cleanup-old-snapshots"
+      description: "Remove SNAPSHOT artifacts older than 7 days"
+      enabled: true
+      action: delete
+      filters:
+        repositories:
+          - "maven-snapshots"
+          - "npm-snapshots"
+          - "docker-snapshots"
+        formats:
+          - "maven2"
+          - "npm"
+          - "docker"
+        versions:
+          - "*-SNAPSHOT"
+          - "*-alpha*"
+          - "*-beta*"
+        updated: "7 days"
+    
+    - name: "cleanup-never-downloaded-releases"
+      description: "Remove release artifacts never downloaded and older than 180 days"
+      enabled: true
+      action: delete
+      filters:
+        repositories:
+          - "maven-releases"
+          - "npm-releases"
+        formats:
+          - "maven2"
+          - "npm"
+        updated: "180 days"
+        downloaded: "never"
+    
+    - name: "cleanup-test-artifacts"
+      description: "Remove test artifacts older than 14 days"
+      enabled: true
+      action: delete
+      filters:
+        repositories:
+          - "maven-releases"
+          - "npm-releases"
+        formats:
+          - "maven2"
+          - "npm"
+        groups:
+          - "*test*"
+          - "*.test.*"
+        names:
+          - "*-test"
+          - "test-*"
+        updated: "14 days"
+
+# Additional environment variables
+env:
+  - name: JAVA_OPTS
+    value: "-Xmx256m -Xms128m"
+  - name: LOG_LEVEL
+    value: "INFO"
+
+# Environment variables from ConfigMaps/Secrets
+envFrom:
+  - configMapRef:
+      name: nexus-cleanup-config
+      optional: true
+
+# Service account configuration
+serviceAccount:
+  create: true
+  name: ""
+
+# Pod configuration
+pod:
+  annotations:
+    prometheus.io/scrape: "false"
+    co.elastic.logs/enabled: "true"
+  labels:
+    environment: "production"
+    team: "platform"
+    cost-center: "infrastructure"
+
+# Node scheduling
+nodeSelector:
+  kubernetes.io/arch: amd64
+  node-type: "worker"
+
+tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "nexus-cleanup"
+    effect: "NoSchedule"
+
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      preference:
+        matchExpressions:
+        - key: node-type
+          operator: In
+          values: ["utility"]
+
+# Image pull secrets (if using private registry)
+imagePullSecrets: []
+# - name: my-registry-secret
+
+# Override names
+nameOverride: ""
+fullnameOverride: ""
