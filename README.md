@@ -163,7 +163,15 @@ export HTTPS_PROXY=http://proxy.company.com:8080
 
 # Java system properties
 ./gradlew run -Dhttp.proxyHost=proxy.company.com -Dhttp.proxyPort=8080 --args="--rules cleanup-rules.yml"
+# With non-proxy hosts
+./gradlew run -Dhttp.proxyHost=proxy.company.com -Dhttp.proxyPort=8080 -Dhttp.nonProxyHosts="localhost|*.internal.com" --args="--rules cleanup-rules.yml"
 ```
+
+The proxy selection follows this priority order:
+1. Command line `--proxy` argument (highest priority)
+2. Java System Properties (`http.proxyHost`, `http.proxyPort`, `http.nonProxyHosts`)
+3. Uppercase environment variables (`HTTP_PROXY`, `HTTPS_PROXY`)
+4. Lowercase environment variables (`http_proxy`, `https_proxy`)
 
 ### Environment Variables
 
@@ -173,8 +181,8 @@ The following environment variables are supported:
 - `NEXUS_USERNAME` - Username for authentication
 - `NEXUS_PASSWORD` - Password for authentication
 - `NEXUS_TOKEN` - Authentication token (alternative to username/password)
-- `HTTP_PROXY` - HTTP proxy URL
-- `HTTPS_PROXY` - HTTPS proxy URL
+- `HTTP_PROXY` / `http_proxy` - HTTP proxy URL (uppercase takes precedence)
+- `HTTPS_PROXY` / `https_proxy` - HTTPS proxy URL (uppercase takes precedence)
 
 ### Report Generation
 
