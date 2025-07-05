@@ -31,19 +31,43 @@ helm install my-nexus-cleanup nexus-cleanup/nexus-repository-cleanup \
 1. Clone the repository:
 ```bash
 git clone https://github.com/skarzhevskyy/nexus-repository-cleanup.git
-cd nexus-repository-cleanup/helm/nexus-repository-cleanup
+cd nexus-repository-cleanup
 ```
 
-2. Create credentials secret:
+2. **Quick Setup (Recommended)**: Use the provided setup script:
+```bash
+# Basic installation with username/password
+./scripts/setup.sh \
+  --nexus-url https://nexus.example.com \
+  --username your-nexus-username \
+  --password your-nexus-password \
+  --dry-run
+
+# Installation with token authentication
+./scripts/setup.sh \
+  --nexus-url https://nexus.example.com \
+  --token your-nexus-token \
+  --dry-run
+
+# Custom installation with values file
+./scripts/setup.sh \
+  --nexus-url https://nexus.example.com \
+  --username admin \
+  --password secret123 \
+  --values-file examples/production-values.yaml \
+  --namespace nexus-cleanup \
+  --release-name my-cleanup
+```
+
+3. **Manual Installation**: Create credentials secret and install manually:
 ```bash
 kubectl create secret generic nexus-credentials \
   --from-literal=username=your-nexus-username \
   --from-literal=password=your-nexus-password
-```
 
-3. Install with custom values:
-```bash
-helm install my-nexus-cleanup . -f my-values.yaml
+helm install my-nexus-cleanup ./helm/nexus-repository-cleanup \
+  --set nexusRepositoryCleanup.nexusUrl=https://nexus.example.com \
+  --set nexusRepositoryCleanup.credentialsSecretName=nexus-credentials
 ```
 
 ## Configuration
@@ -171,6 +195,8 @@ envFrom:
 ## Examples
 
 ### Complete Production Configuration
+
+See [examples/production-values.yaml](../../examples/production-values.yaml) for a comprehensive production configuration example, and [examples/cleanup-rules.yml](../../examples/cleanup-rules.yml) for sample cleanup rules.
 
 ```yaml
 # values.yaml
