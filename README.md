@@ -122,16 +122,131 @@ rules:
       downloaded: "never"
 ```
 
+### Authentication
+
+The tool supports multiple authentication methods:
+
+#### Username and Password
+```bash
+# Command line arguments
+./gradlew run --args="--rules cleanup-rules.yml --url https://nexus.example.com --username admin --password yourpassword"
+
+# Environment variables
+export NEXUS_USERNAME=admin
+export NEXUS_PASSWORD=yourpassword
+./gradlew run --args="--rules cleanup-rules.yml --url https://nexus.example.com"
+```
+
+#### Authentication Token
+```bash
+# Command line argument
+./gradlew run --args="--rules cleanup-rules.yml --url https://nexus.example.com --token your-auth-token"
+
+# Environment variable
+export NEXUS_TOKEN=your-auth-token
+./gradlew run --args="--rules cleanup-rules.yml --url https://nexus.example.com"
+```
+
+### Proxy Support
+
+The tool supports proxy configuration through multiple methods:
+
+```bash
+# Command line proxy argument (highest priority)
+./gradlew run --args="--rules cleanup-rules.yml --url https://nexus.example.com --proxy proxy.company.com:8080"
+./gradlew run --args="--rules cleanup-rules.yml --url https://nexus.example.com --proxy http://user:pass@proxy.company.com:8080"
+
+# Environment variables
+export HTTP_PROXY=http://proxy.company.com:8080
+export HTTPS_PROXY=http://proxy.company.com:8080
+./gradlew run --args="--rules cleanup-rules.yml"
+
+# Java system properties
+./gradlew run -Dhttp.proxyHost=proxy.company.com -Dhttp.proxyPort=8080 --args="--rules cleanup-rules.yml"
+# With non-proxy hosts
+./gradlew run -Dhttp.proxyHost=proxy.company.com -Dhttp.proxyPort=8080 -Dhttp.nonProxyHosts="localhost|*.internal.com" --args="--rules cleanup-rules.yml"
+```
+
+The proxy selection follows this priority order:
+1. Command line `--proxy` argument (highest priority)
+2. Java System Properties (`http.proxyHost`, `http.proxyPort`, `http.nonProxyHosts`)
+3. Uppercase environment variables (`HTTP_PROXY`, `HTTPS_PROXY`)
+4. Lowercase environment variables (`http_proxy`, `https_proxy`)
+
+### Environment Variables
+
+The following environment variables are supported:
+
+- `NEXUS_URL` - Nexus Repository Manager URL (required)
+- `NEXUS_USERNAME` - Username for authentication
+- `NEXUS_PASSWORD` - Password for authentication
+- `NEXUS_TOKEN` - Authentication token (alternative to username/password)
+- `HTTP_PROXY` / `http_proxy` - HTTP proxy URL (uppercase takes precedence)
+- `HTTPS_PROXY` / `https_proxy` - HTTPS proxy URL (uppercase takes precedence)
+
+### Report Generation
+
+The tool provides comprehensive reporting capabilities that are especially important for `--dry-run` executions to preview and validate removal of data before performing actual cleanup operations.
+
+#### Component Output
+Generate a detailed list of components that match your cleanup rules. This is particularly valuable when combined with `--dry-run` to preview what would be deleted:
+
+```bash
+# Preview components to be removed (dry-run mode)
+./gradlew run --args="--rules cleanup-rules.yml --dry-run --output-component components-to-be-removed.json"
+
+# Save filtered components list to file in JSON or CSV format
+./gradlew run --args="--rules cleanup-rules.yml --output-component components.json"
+./gradlew run --args="--rules cleanup-rules.yml --output-component components.csv"
+
+# Combine with authentication for complete workflow
+./gradlew run --args="--rules cleanup-rules.yml --url https://nexus.example.com --username admin --password yourpassword --dry-run --output-component preview.json"
+```
+
+#### Repository Summary Report
+```bash
+# Generate repository summary with component counts and sizes
+./gradlew run --args="--rules cleanup-rules.yml --report-repositories-summary"
+
+# Sort repositories by different criteria
+./gradlew run --args="--rules cleanup-rules.yml --report-repositories-summary --repo-sort name"
+./gradlew run --args="--rules cleanup-rules.yml --report-repositories-summary --repo-sort size"
+./gradlew run --args="--rules cleanup-rules.yml --report-repositories-summary --repo-sort components"
+```
+
+#### Top Groups Report
+```bash
+# Generate top groups report
+./gradlew run --args="--rules cleanup-rules.yml --report-top-groups"
+
+# Customize number of top groups and sorting
+./gradlew run --args="--rules cleanup-rules.yml --report-top-groups --top-groups 20 --group-sort size"
+```
+
+#### Save Reports to Files
+```bash
+# Save report to JSON or CSV file
+./gradlew run --args="--rules cleanup-rules.yml --report-repositories-summary --report-output-file report.json"
+./gradlew run --args="--rules cleanup-rules.yml --report-repositories-summary --report-output-file report.csv"
+```
+
 ### Usage
 
 ```bash
 # Run cleanup with dry-run (no deletions) from this source directory
-./gradlew run --args="--rules cleanup-rules.yml --dry-run"
+./gradlew run --args="--rules cleanup-rules.yml --url https://nexus.example.com --username admin --password yourpassword --dry-run"
 
 # Execute actual cleanup
+./gradlew run --args="--rules cleanup-rules.yml --url https://nexus.example.com --username admin --password yourpassword"
+
+# Using environment variables
+export NEXUS_URL=https://nexus.example.com
+export NEXUS_USERNAME=admin
+export NEXUS_PASSWORD=yourpassword
 ./gradlew run --args="--rules cleanup-rules.yml"
+
 # or execute the downloaded JAR
-java -jar nexus-repository-cleanup.jar --rules cleanup-rules.yml
+java -jar nexus-repository-cleanup.jar --rules cleanup-rules.yml --url https://nexus.example.com --username admin --password yourpassword
 
 # Using docker with environment variables
 docker run --rm \
