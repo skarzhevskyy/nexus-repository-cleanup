@@ -271,21 +271,18 @@ A complete Helm chart is available for deploying the application as a Kubernetes
 #### Quick Installation
 
 ```bash
-# Using the automated setup script (recommended)
-./scripts/setup.sh \
-  --nexus-url https://nexus.example.com \
-  --username your-nexus-username \
-  --password your-nexus-password \
-  --dry-run
-
-# Manual installation
 kubectl create secret generic nexus-credentials \
   --from-literal=username=your-nexus-username \
   --from-literal=password=your-nexus-password
 
-helm install nexus-cleanup ./helm/nexus-repository-cleanup \
+kubectl create configmap nexus-cleanup-rules \
+        --from-file=cleanup-rules.yml="examples/cleanup-rules.yml"
+        
+helm install nexus-cleanup oci://ghcr.io/skarzhevskyy/charts/nexus-repository-cleanup --version 0.0.1 \
   --set nexusRepositoryCleanup.nexusUrl=https://nexus.example.com \
-  --set nexusRepositoryCleanup.credentialsSecretName=nexus-credentials
+  --set nexusRepositoryCleanup.credentialsSecretName=nexus-credentials \
+  --set nexusRepositoryCleanup.existingCleanupRulesConfigMapName=nexus-cleanup-rules \
+  --set nexusRepositoryCleanup.dryRun=true
 ```
 
 #### Features

@@ -28,9 +28,9 @@
   Then set nexusRepositoryCleanup.credentialsSecretName=nexus-credentials in your values.yaml
 {{- end }}
 
-{{- if not (or .Values.nexusRepositoryCleanup.rules .Values.nexusRepositoryCleanup.rulesRef) }}
+{{- if not (or .Values.nexusRepositoryCleanup.rules .Values.nexusRepositoryCleanup.existingCleanupRulesConfigMapName) }}
 
 ⚠️  WARNING: No cleanup rules configured. Either:
   - Set nexusRepositoryCleanup.rules with your cleanup rules
-  - Or create a ConfigMap with rules and set nexusRepositoryCleanup.rulesRef to reference it
+  - Or create a ConfigMap with rules and set nexusRepositoryCleanup.existingCleanupRulesConfigMapName to reference it
 {{- end }}

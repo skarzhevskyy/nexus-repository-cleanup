@@ -2,7 +2,7 @@ apiVersion: v2
 name: nexus-repository-cleanup
 description: A Helm chart for deploying Nexus Repository Cleanup as a Kubernetes CronJob
 type: application
-version: 0.1.0
+version: 0.0.0
 appVersion: "latest"
 home: https://github.com/skarzhevskyy/nexus-repository-cleanup
 icon: https://raw.githubusercontent.com/sonatype/nexus-public/master/components/nexus-core/src/main/resources/static/rapture/resources/images/nexus.png
@@ -18,4 +18,4 @@ keywords:
   - cronjob
 annotations:
   category: Tools
-kubeVersion: ">=1.30.0-0"
+kubeVersion: ">=1.25.0-0"

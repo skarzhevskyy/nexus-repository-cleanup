@@ -79,8 +79,8 @@ Create the image name
 Create the config map name for cleanup rules
 */}}
 {{- define "nexus-repository-cleanup.configMapName" -}}
-{{- if .Values.nexusRepositoryCleanup.rulesRef }}
-{{- .Values.nexusRepositoryCleanup.rulesRef }}
+{{- if .Values.nexusRepositoryCleanup.existingCleanupRulesConfigMapName }}
+{{- .Values.nexusRepositoryCleanup.existingCleanupRulesConfigMapName }}
 {{- else }}
 {{- include "nexus-repository-cleanup.fullname" . }}-rules
 {{- end }}
@@ -91,13 +91,16 @@ Create command arguments
 */}}
 {{- define "nexus-repository-cleanup.args" -}}
 {{- $args := list }}
-{{- if or .Values.nexusRepositoryCleanup.rules .Values.nexusRepositoryCleanup.rulesRef }}
+{{- if or .Values.nexusRepositoryCleanup.rules .Values.nexusRepositoryCleanup.existingCleanupRulesConfigMapName }}
 {{- $args = append $args "--rules" }}
 {{- $args = append $args "/app/config/cleanup-rules.yml" }}
 {{- end }}
 {{- if .Values.nexusRepositoryCleanup.nexusUrl }}
 {{- $args = append $args "--url" }}
 {{- $args = append $args .Values.nexusRepositoryCleanup.nexusUrl }}
+{{- end }}
+{{- if .Values.nexusRepositoryCleanup.dryRun }}
+{{- $args = append $args "--dry-run" }}
 {{- end }}
 {{- if .Values.nexusRepositoryCleanup.otherArguments }}
 {{- $otherArgs := splitList " " .Values.nexusRepositoryCleanup.otherArguments }}
