@@ -1,0 +1,12 @@
+{{- if .Values.nexusRepositoryCleanup.rules }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nexus-repository-cleanup.fullname" . }}-rules
+  labels:
+    {{- include "nexus-repository-cleanup.labels" . | nindent 4 }}
+data:
+  cleanup-rules.yml: |
+    rules:
+{{- toYaml .Values.nexusRepositoryCleanup.rules | nindent 6 }}
+{{- end }}

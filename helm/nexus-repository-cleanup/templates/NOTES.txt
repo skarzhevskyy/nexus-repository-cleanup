@@ -1,0 +1,36 @@
+1. Get the application URL by running these commands:
+{{- if .Values.nexusRepositoryCleanup.nexusUrl }}
+  Nexus URL: {{ .Values.nexusRepositoryCleanup.nexusUrl }}
+{{- else }}
+  echo "Warning: No Nexus URL configured. Set nexusRepositoryCleanup.nexusUrl in values.yaml"
+{{- end }}
+
+2. Check the CronJob status:
+  kubectl get cronjob {{ include "nexus-repository-cleanup.fullname" . }} -n {{ .Release.Namespace }}
+
+3. View recent jobs:
+  kubectl get jobs -l app.kubernetes.io/instance={{ .Release.Name }} -n {{ .Release.Namespace }}
+
+4. Check logs from the latest job:
+  kubectl logs -l app.kubernetes.io/instance={{ .Release.Name }} -n {{ .Release.Namespace }} --tail=100
+
+5. Manually trigger a job (for testing):
+  kubectl create job --from=cronjob/{{ include "nexus-repository-cleanup.fullname" . }} {{ include "nexus-repository-cleanup.fullname" . }}-manual -n {{ .Release.Namespace }}
+
+{{- if not .Values.nexusRepositoryCleanup.credentialsSecretName }}
+
+⚠️  WARNING: No credentials secret configured. Create a secret with Nexus credentials:
+  kubectl create secret generic nexus-credentials \
+    --from-literal=username=your-username \
+    --from-literal=password=your-password \
+    -n {{ .Release.Namespace }}
+
+  Then set nexusRepositoryCleanup.credentialsSecretName=nexus-credentials in your values.yaml
+{{- end }}
+
+{{- if not (or .Values.nexusRepositoryCleanup.rules .Values.nexusRepositoryCleanup.rulesRef) }}
+
+⚠️  WARNING: No cleanup rules configured. Either:
+  - Set nexusRepositoryCleanup.rules with your cleanup rules
+  - Or create a ConfigMap with rules and set nexusRepositoryCleanup.rulesRef to reference it
+{{- end }}

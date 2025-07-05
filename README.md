@@ -258,6 +258,40 @@ docker run --rm \
   --rules /app/config/cleanup-rules.yml
 ```
 
+## Kubernetes Deployment
+
+For production environments, you can deploy this application as a Kubernetes CronJob using the provided Helm chart. This approach offers better scheduling, resource management, and integration with your Kubernetes infrastructure.
+
+### Using Helm Chart
+
+A complete Helm chart is available for deploying the application as a Kubernetes CronJob:
+
+📖 **[Helm Chart Documentation](helm/nexus-repository-cleanup/README.md)** - Complete installation and configuration guide
+
+#### Quick Installation
+
+```bash
+# Create credentials secret
+kubectl create secret generic nexus-credentials \
+  --from-literal=username=your-nexus-username \
+  --from-literal=password=your-nexus-password
+
+# Install the chart
+helm install nexus-cleanup ./helm/nexus-repository-cleanup \
+  --set nexusRepositoryCleanup.nexusUrl=https://nexus.example.com \
+  --set nexusRepositoryCleanup.credentialsSecretName=nexus-credentials \
+  --set-file nexusRepositoryCleanup.rules=cleanup-rules.yml
+```
+
+#### Features
+
+- 🕒 **Automated scheduling** with cron expressions
+- 🔒 **Security hardened** containers with non-root execution
+- 📊 **Resource management** with limits and requests
+- 🗂️ **ConfigMap integration** for cleanup rules
+- 🔐 **Secret management** for Nexus credentials
+- 📋 **Comprehensive logging** and monitoring support
+
 ## Contributing
 
 1. Fork the repository

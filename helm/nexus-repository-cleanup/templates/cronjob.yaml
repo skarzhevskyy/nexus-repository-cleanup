@@ -1,0 +1,110 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "nexus-repository-cleanup.fullname" . }}
+  labels:
+    {{- include "nexus-repository-cleanup.labels" . | nindent 4 }}
+    {{- with .Values.cronjob.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.cronjob.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  schedule: {{ .Values.cronjob.schedule | quote }}
+  {{- if .Values.cronjob.timeZone }}
+  timeZone: {{ .Values.cronjob.timeZone | quote }}
+  {{- end }}
+  suspend: {{ .Values.cronjob.suspend }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "nexus-repository-cleanup.selectorLabels" . | nindent 12 }}
+            {{- with .Values.pod.labels }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.pod.annotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        spec:
+          automountServiceAccountToken: false
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          serviceAccountName: {{ include "nexus-repository-cleanup.serviceAccountName" . }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          restartPolicy: OnFailure
+          containers:
+            - name: {{ .Chart.Name }}
+              securityContext:
+                {{- toYaml .Values.containerSecurityContext | nindent 16 }}
+              image: {{ include "nexus-repository-cleanup.image" . }}
+              imagePullPolicy: {{ .Values.image.pullPolicy }}
+              args: {{- include "nexus-repository-cleanup.args" . | nindent 16 }}
+              env:
+                {{- if .Values.nexusRepositoryCleanup.credentialsSecretName }}
+                - name: NEXUS_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.nexusRepositoryCleanup.credentialsSecretName }}
+                      key: username
+                      optional: true
+                - name: NEXUS_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.nexusRepositoryCleanup.credentialsSecretName }}
+                      key: password
+                      optional: true
+                - name: NEXUS_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.nexusRepositoryCleanup.credentialsSecretName }}
+                      key: token
+                      optional: true
+                {{- end }}
+                {{- if .Values.nexusRepositoryCleanup.nexusUrl }}
+                - name: NEXUS_URL
+                  value: {{ .Values.nexusRepositoryCleanup.nexusUrl | quote }}
+                {{- end }}
+                {{- with .Values.env }}
+                {{- toYaml . | nindent 16 }}
+                {{- end }}
+              {{- with .Values.envFrom }}
+              envFrom:
+                {{- toYaml . | nindent 16 }}
+              {{- end }}
+              {{- if or .Values.nexusRepositoryCleanup.rules .Values.nexusRepositoryCleanup.rulesRef }}
+              volumeMounts:
+                - name: cleanup-rules
+                  mountPath: /app/config
+                  readOnly: true
+              {{- end }}
+              resources:
+                {{- toYaml .Values.resources | nindent 16 }}
+          {{- if or .Values.nexusRepositoryCleanup.rules .Values.nexusRepositoryCleanup.rulesRef }}
+          volumes:
+            - name: cleanup-rules
+              configMap:
+                name: {{ include "nexus-repository-cleanup.configMapName" . }}
+          {{- end }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.affinity }}
+          affinity:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
