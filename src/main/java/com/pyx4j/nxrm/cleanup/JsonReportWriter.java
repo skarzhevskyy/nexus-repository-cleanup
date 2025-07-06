@@ -2,7 +2,6 @@ package com.pyx4j.nxrm.cleanup;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.List;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -33,8 +32,8 @@ public class JsonReportWriter implements ReportWriter {
     }
 
     @Override
-    public void writeComponents(List<ComponentXO> components) throws IOException {
-        objectMapper.writeValue(writer, components);
+    public void writeComponent(ComponentXO component) throws IOException {
+        objectMapper.writeValue(writer, component);
     }
 
     @Override

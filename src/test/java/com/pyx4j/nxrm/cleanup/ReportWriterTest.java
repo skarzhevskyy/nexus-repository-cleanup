@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.Collections;
 
 import com.pyx4j.nxrm.cleanup.model.RepositoryComponentsSummary;
 import com.pyx4j.nxrm.cleanup.model.SortBy;
@@ -44,7 +43,7 @@ class ReportWriterTest {
             component.setGroup("test-group");
             component.setName("test-name");
             component.setVersion("1.0");
-            reportWriter.writeComponents(Collections.singletonList(component));
+            reportWriter.writeComponent(component);
         }
         assertThat(stringWriter.toString()).contains("test-repo");
     }
@@ -58,7 +57,7 @@ class ReportWriterTest {
             component.setGroup("test-group");
             component.setName("test-name");
             component.setVersion("1.0");
-            reportWriter.writeComponents(Collections.singletonList(component));
+            reportWriter.writeComponent(component);
         }
         assertThat(stringWriter.toString()).contains("\"test-repo\",\"test-group\",\"test-name\",\"1.0\",\"0\"");
     }

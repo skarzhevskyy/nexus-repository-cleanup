@@ -2,7 +2,6 @@ package com.pyx4j.nxrm.cleanup;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.List;
 
 import com.opencsv.CSVWriter;
 import com.pyx4j.nxrm.cleanup.model.GroupStats;
@@ -15,13 +14,19 @@ public class CsvReportWriter implements ReportWriter {
 
     private final CSVWriter csvWriter;
 
+    private boolean headerWritten = false;
+
     public CsvReportWriter(Writer writer) {
         this.csvWriter = new CSVWriter(writer);
     }
 
     @Override
     public void writeRepositoryComponentsSummary(RepositoryComponentsSummary summary, SortBy sortBy) throws IOException {
-        csvWriter.writeNext(new String[]{"Repository", "Format", "Components", "Total Size"});
+        if (!headerWritten) {
+            csvWriter.writeNext(new String[]{"Repository", "Format", "Components", "Total Size"});
+            headerWritten = true;
+        }
+
         summary.getRepositoryStats().forEach((repoName, stats) -> {
             csvWriter.writeNext(new String[]{
                     repoName,
@@ -40,7 +45,10 @@ public class CsvReportWriter implements ReportWriter {
 
     @Override
     public void writeGroupsSummary(GroupsSummary summary, SortBy sortBy, int topGroups) throws IOException {
-        csvWriter.writeNext(new String[]{"Group", "Components", "Total Size"});
+        if (!headerWritten) {
+            csvWriter.writeNext(new String[]{"Group", "Components", "Total Size"});
+            headerWritten = true;
+        }
         summary.getGroupStats().entrySet().stream()
                 .limit(topGroups)
                 .forEach(entry -> {
@@ -54,17 +62,18 @@ public class CsvReportWriter implements ReportWriter {
     }
 
     @Override
-    public void writeComponents(List<ComponentXO> components) throws IOException {
-        csvWriter.writeNext(new String[]{"Repository", "Group", "Name", "Version", "Size"});
-        for (ComponentXO component : components) {
-            csvWriter.writeNext(new String[]{
-                    component.getRepository(),
-                    component.getGroup(),
-                    component.getName(),
-                    component.getVersion(),
-                    String.valueOf(calculateComponentSize(component))
-            });
+    public void writeComponent(ComponentXO component) throws IOException {
+        if (!headerWritten) {
+            csvWriter.writeNext(new String[]{"Repository", "Group", "Name", "Version", "Size"});
+            headerWritten = true;
         }
+        csvWriter.writeNext(new String[]{
+                component.getRepository(),
+                component.getGroup(),
+                component.getName(),
+                component.getVersion(),
+                String.valueOf(calculateComponentSize(component))
+        });
     }
 
     private long calculateComponentSize(ComponentXO component) {

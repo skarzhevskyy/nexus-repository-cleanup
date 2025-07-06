@@ -3,7 +3,6 @@ package com.pyx4j.nxrm.cleanup;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
@@ -30,7 +29,7 @@ public final class NxCleanupJob {
 
     private static final Logger log = LoggerFactory.getLogger(NxCleanupJob.class);
 
-    NxCleanupCommandArgs args;
+    private final NxCleanupCommandArgs args;
 
     private final ApiClient apiClient;
 
@@ -40,7 +39,7 @@ public final class NxCleanupJob {
 
     private final GroupsSummary groupsSummary;
 
-    private final List<ComponentXO> allFilteredComponents = new ArrayList<>();
+    private final ReportWriter componentWriter;
 
     public NxCleanupJob(NxCleanupCommandArgs args) {
         // Create our summary objects based on report type
@@ -62,6 +61,11 @@ public final class NxCleanupJob {
         }
         // Create component filter based on rules
         componentFilter = new ComponentFilter(ruleSet);
+        try {
+            componentWriter = ReportWriterFactory.create(args.outputComponentFile);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static ApiClient createApiClient(NxCleanupCommandArgs args) {
@@ -138,43 +142,46 @@ public final class NxCleanupJob {
         return resultCode.get();
     }
 
-
     private Mono<Void> processRepositoryComponents(AbstractApiRepository repository) {
         ComponentsApi componentsApi = new ComponentsApi(apiClient);
-        return processPaginatedComponents(componentsApi, repository, null);
-    }
-
-    private Mono<Void> processPaginatedComponents(ComponentsApi componentsApi, AbstractApiRepository repository, String continuationToken) {
         final String repoName = Objects.requireNonNull(repository.getName(), "Repository name cannot be null");
-        log.debug("Fetching components page for repository {} with token: {}", repoName, continuationToken);
 
-        return componentsApi.getComponents(repoName, continuationToken)
-                .flatMap(page -> {
-                    if (page != null && page.getItems() != null) {
-                        // Apply filter to components
-                        List<ComponentXO> filteredComponents = page.getItems().stream()
-                                .filter(componentFilter.getComponentFilter())
-                                .toList();
+        return Mono.just("")  // Start with empty string to trigger initial fetch
+                .expand(token -> {
+                    // Convert empty string to null for the API call
+                    String actualToken = token.isEmpty() ? null : token;
+                    log.debug("Fetching components page for repository {} with token: {}", repoName, actualToken);
 
-                        log.debug("Repository {} page has {} components (filtered from {}) for processing",
-                                repoName, filteredComponents.size(), page.getItems().size());
+                    return componentsApi.getComponents(repoName, actualToken)
+                            .flatMap(page -> {
+                                if (page != null && page.getItems() != null) {
+                                    // Apply filter to components
+                                    List<ComponentXO> filteredComponents = page.getItems().stream()
+                                            .filter(componentFilter.getComponentFilter())
+                                            .toList();
 
-                        // Process each filtered component
-                        return processFilteredComponents(componentsApi, repository, filteredComponents)
-                                .then(Mono.defer(() -> {
-                                    // If we have a continuation token, process next page
-                                    String nextContinuationToken = page.getContinuationToken();
-                                    if (nextContinuationToken != null && !nextContinuationToken.isEmpty()) {
-                                        return processPaginatedComponents(componentsApi, repository, nextContinuationToken);
-                                    }
+                                    log.debug("Repository {} page has {} components (filtered from {}) for processing",
+                                            repoName, filteredComponents.size(), page.getItems().size());
+
+                                    // Process filtered components for this page
+                                    return processFilteredComponents(componentsApi, repository, filteredComponents)
+                                            .then(Mono.fromCallable(() -> {
+                                                String nextToken = page.getContinuationToken();
+                                                return (nextToken != null && !nextToken.isEmpty()) ? nextToken : null;
+                                            }))
+                                            .cast(String.class);  // Ensure type consistency
+                                } else {
+                                    log.debug("Repository {} page has no components", repoName);
                                     return Mono.empty();
-                                }));
-                    } else {
-                        log.debug("Repository {} page has no components", repoName);
-                    }
-
-                    return Mono.empty();
-                });
+                                }
+                            })
+                            .onErrorResume(error -> {
+                                log.warn("Error processing page for repository {} with token {}: {}",
+                                        repoName, actualToken, error.getMessage());
+                                return Mono.empty(); // Stop pagination on error
+                            });
+                })
+                .then();
     }
 
     private Mono<Void> processFilteredComponents(ComponentsApi componentsApi, AbstractApiRepository repository, List<ComponentXO> filteredComponents) {
@@ -227,9 +234,6 @@ public final class NxCleanupJob {
         Objects.requireNonNull(component, "Component cannot be null");
         Objects.requireNonNull(repository, "Repository cannot be null");
 
-        // Add component to the global list for component reporting
-        allFilteredComponents.add(component);
-
         final String repoName = repository.getName();
         final String repoFormat = repository.getFormat();
         final long componentSize = calculateComponentSize(component);
@@ -246,11 +250,17 @@ public final class NxCleanupJob {
             String groupName = component.getGroup();
             groupsSummary.addGroupStats(groupName, 1, componentSize);
         }
+        if (componentWriter != null) {
+            try {
+                componentWriter.writeComponent(component);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private void writeReports() throws IOException {
-        try (ReportWriter reportWriter = ReportWriterFactory.create(args.reportOutputFile);
-             ReportWriter componentWriter = ReportWriterFactory.create(args.outputComponentFile)) {
+        try (ReportWriter reportWriter = ReportWriterFactory.create(args.reportOutputFile)) {
 
             if (reportWriter != null) {
                 if (repositoryComponentsSummary.isEnabled()) {
@@ -275,11 +285,10 @@ public final class NxCleanupJob {
             }
 
             if (componentWriter != null) {
-                componentWriter.writeComponents(allFilteredComponents);
+                componentWriter.close();
             }
         }
     }
-
 
     /**
      * Calculates the total size of all components in bytes.
