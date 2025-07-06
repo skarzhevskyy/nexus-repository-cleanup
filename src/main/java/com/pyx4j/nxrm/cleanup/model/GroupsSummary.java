@@ -16,10 +16,16 @@ public class GroupsSummary extends ReportSection {
 
     private long totalSizeBytes;
 
+    private long totalRemainingComponents;
+
+    private long totalRemainingSizeBytes;
+
     public GroupsSummary() {
         this.groupStats = new HashMap<>();
         this.totalComponents = 0;
         this.totalSizeBytes = 0;
+        this.totalRemainingComponents = 0;
+        this.totalRemainingSizeBytes = 0;
     }
 
     /**
@@ -29,15 +35,18 @@ public class GroupsSummary extends ReportSection {
      * @param componentCount The number of components in the group
      * @param sizeBytes      The total size in bytes of all components in the group
      */
-    public void addGroupStats(String groupName, long componentCount, long sizeBytes) {
+    public void addGroupStats(String groupName, long componentCount, long sizeBytes, long remainingComponentCount, long remainingSizeBytes) {
         Objects.requireNonNull(groupName, "Group name cannot be null");
 
         GroupStats stats = groupStats.computeIfAbsent(groupName, k -> new GroupStats());
         stats.addComponents(componentCount, sizeBytes);
+        stats.addRemaining(remainingComponentCount, remainingSizeBytes);
 
         // Update totals
         totalComponents += componentCount;
         totalSizeBytes += sizeBytes;
+        totalRemainingComponents += remainingComponentCount;
+        totalRemainingSizeBytes += remainingSizeBytes;
     }
 
     /**
@@ -65,6 +74,14 @@ public class GroupsSummary extends ReportSection {
      */
     public long getTotalSizeBytes() {
         return totalSizeBytes;
+    }
+
+    public long getTotalRemainingComponents() {
+        return totalRemainingComponents;
+    }
+
+    public long getTotalRemainingSizeBytes() {
+        return totalRemainingSizeBytes;
     }
 
 }

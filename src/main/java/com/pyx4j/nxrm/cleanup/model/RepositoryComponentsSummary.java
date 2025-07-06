@@ -16,10 +16,16 @@ public class RepositoryComponentsSummary extends ReportSection {
 
     private long totalSizeBytes;
 
+    private long totalRemainingComponents;
+
+    private long totalRemainingSizeBytes;
+
     public RepositoryComponentsSummary() {
         this.repositoryStats = new HashMap<>();
         this.totalComponents = 0;
         this.totalSizeBytes = 0;
+        this.totalRemainingComponents = 0;
+        this.totalRemainingSizeBytes = 0;
     }
 
     /**
@@ -30,16 +36,19 @@ public class RepositoryComponentsSummary extends ReportSection {
      * @param componentCount The number of components in the repository
      * @param sizeBytes      The total size in bytes of all components in the repository
      */
-    public void addRepositoryStats(String repositoryName, String format, long componentCount, long sizeBytes) {
+    public void addRepositoryStats(String repositoryName, String format, long componentCount, long sizeBytes, long remainingComponentCount, long remainingSizeBytes) {
         Objects.requireNonNull(repositoryName, "Repository name cannot be null");
         Objects.requireNonNull(format, "Format cannot be null");
 
         RepositoryStats stats = repositoryStats.computeIfAbsent(repositoryName, k -> new RepositoryStats(format));
         stats.addComponents(componentCount, sizeBytes);
+        stats.addRemaining(remainingComponentCount, remainingSizeBytes);
 
         // Update totals
         totalComponents += componentCount;
         totalSizeBytes += sizeBytes;
+        totalRemainingComponents += remainingComponentCount;
+        totalRemainingSizeBytes += remainingSizeBytes;
     }
 
     /**
@@ -67,6 +76,14 @@ public class RepositoryComponentsSummary extends ReportSection {
      */
     public long getTotalSizeBytes() {
         return totalSizeBytes;
+    }
+
+    public long getTotalRemainingComponents() {
+        return totalRemainingComponents;
+    }
+
+    public long getTotalRemainingSizeBytes() {
+        return totalRemainingSizeBytes;
     }
 
 }

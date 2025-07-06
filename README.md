@@ -7,7 +7,7 @@ A declarative, infrastructure-as-code tool for cleaning up artifacts in a Sonaty
 Nexus Repository Manager’s built-in Cleanup Policies do not support filtering by “never downloaded” artifacts, and the upcoming Nexus versions may deprecate Groovy scripting. This project fills that gap by providing:
 
 - **Declarative configuration**: Define cleanup rules in YAML.
-- **Code-driven**: Manage policies alongside your CI/CD pipeline or Kubernetes Jobs.
+- **Code-driven**: Manage policies alongside the CI/CD pipeline or Kubernetes Jobs.
 - **REST API integration**: Works with Nexus OSS or Pro over HTTP(S).
 - **Extensible filters**: Out-of-the-box support for “never downloaded,” age, and more.
 
@@ -256,6 +256,26 @@ docker run --rm \
   -e NEXUS_PASSWORD=yourpassword \
   ghcr.io/skarzhevskyy/nexus-repository-cleanup:latest \
   --rules /app/config/cleanup-rules.yml
+```
+
+### Example Output
+
+Repository Report Summary (Dry Run):
+```
+====================================================================================================================
+Repository                            Format      Removed #      Removed Size      Remaining #       Remaining Size
+------------------------------        ----------  ------------   ---------------   ---------------   ---------------
+maven-central                         maven2                10           1.00 KB                 5          512.00 B
+maven-releases                        maven2                20           2.00 KB                15           1.50 KB
+
+TOTAL                                 -                     30           3.00 KB                20           2.00 KB
+
+Top Consuming Groups (by Components, Dry Run):
+====================================================================================================================
+Group                                 Removed #      Removed Size      Remaining #     Remaining Size
+------------------------------        ------------   ---------------   -------------   ---------------
+com.example                                   20             2.00 KB              15           1.50 KB
+org.springframework                           10             1.00 KB               5           512.00 B
 ```
 
 ## Kubernetes Deployment
