@@ -1,0 +1,105 @@
+# Example cleanup rules for nexus-repository-cleanup
+# This file demonstrates various cleanup rule configurations
+# Copy and modify these rules according to your repository cleanup needs
+
+rules:
+  # Remove old SNAPSHOT artifacts
+  - name: "cleanup-old-snapshots"
+    description: >
+      Remove SNAPSHOT artifacts older than 30 days from development repositories.
+      This helps keep snapshot repositories from growing indefinitely.
+    enabled: true
+    action: delete
+    filters:
+      repositories:
+        - "maven-snapshots"
+        - "npm-snapshots"
+        - "*-snapshots"  # Wildcard pattern for all snapshot repos
+      formats:
+        - "maven2"
+        - "npm"
+      versions:
+        - "*-SNAPSHOT"
+        - "*-alpha*"
+        - "*-beta*"
+      updated: "30 days"
+
+  # Remove release artifacts that were never downloaded
+  - name: "cleanup-never-downloaded-releases"
+    description: >
+      Remove release artifacts that have never been downloaded and are older than 90 days.
+      This helps clean up unused artifacts that were published but never used.
+    enabled: true
+    action: delete
+    filters:
+      repositories:
+        - "maven-releases"
+        - "npm-releases"
+      formats:
+        - "maven2"
+        - "npm"
+      updated: "90 days"
+      downloaded: "never"
+
+  # Remove old test/experimental artifacts
+  - name: "cleanup-test-artifacts"
+    description: >
+      Remove test and experimental artifacts older than 14 days.
+      These are typically temporary artifacts used for testing.
+    enabled: true
+    action: delete
+    filters:
+      repositories:
+        - "maven-releases"
+        - "npm-releases"
+      formats:
+        - "maven2"
+        - "npm"
+      groups:
+        - "*test*"
+        - "*experimental*"
+        - "*.test.*"
+      names:
+        - "*-test"
+        - "*-experimental"
+        - "test-*"
+      updated: "14 days"
+
+  # Conservative cleanup for production artifacts
+  - name: "cleanup-old-production-artifacts"
+    description: >
+      Remove production artifacts older than 2 years that haven't been downloaded
+      in the last 6 months. This is a conservative approach for production artifacts.
+    enabled: false  # Disabled by default - enable carefully after review
+    action: delete
+    filters:
+      repositories:
+        - "maven-releases"
+        - "npm-releases"
+      formats:
+        - "maven2"
+        - "npm"
+      groups:
+        - "com.company.prod.*"  # Adjust to your production group patterns
+      updated: "730 days"  # 2 years
+      downloaded: "180 days"  # 6 months
+
+  # Example rule for specific version patterns
+  - name: "cleanup-old-rc-versions"
+    description: >
+      Remove old release candidate versions that are older than 60 days.
+      RC versions are typically superseded by final releases.
+    enabled: true
+    action: delete
+    filters:
+      repositories:
+        - "maven-releases"
+        - "npm-releases"
+      formats:
+        - "maven2"
+        - "npm"
+      versions:
+        - "*-rc*"
+        - "*-RC*"
+        - "*-candidate*"
+      updated: "60 days"
