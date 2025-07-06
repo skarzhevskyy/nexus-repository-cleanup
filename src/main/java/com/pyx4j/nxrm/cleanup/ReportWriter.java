@@ -1,7 +1,6 @@
 package com.pyx4j.nxrm.cleanup;
 
 import java.io.IOException;
-import java.util.List;
 
 import com.pyx4j.nxrm.cleanup.model.GroupsSummary;
 import com.pyx4j.nxrm.cleanup.model.RepositoryComponentsSummary;
@@ -14,7 +13,7 @@ public interface ReportWriter extends AutoCloseable {
 
     void writeGroupsSummary(GroupsSummary summary, SortBy sortBy, int topGroups) throws IOException;
 
-    void writeComponents(List<ComponentXO> components) throws IOException;
+    void writeComponent(ComponentXO component) throws IOException;
 
     @Override
     void close() throws IOException;
