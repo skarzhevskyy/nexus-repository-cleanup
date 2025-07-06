@@ -22,17 +22,18 @@ class NxReportConsoleTest {
     @Test
     void printSummary_withShortRepositoryNames_shouldFormatCorrectly() {
         RepositoryComponentsSummary summary = new RepositoryComponentsSummary();
-        summary.addRepositoryStats("maven-central", "maven2", 100, 1024000);
-        summary.addRepositoryStats("npm-proxy", "npm", 50, 512000);
+        summary.addRepositoryStats("maven-central", "maven2", 100, 1024000, 50, 512000);
+        summary.addRepositoryStats("npm-proxy", "npm", 50, 512000, 25, 256000);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);
 
-        NxReportConsole.printSummary(summary, SortBy.COMPONENTS, printStream);
+        NxReportConsole.printSummary(summary, SortBy.COMPONENTS, printStream, true);
 
         String output = outputStream.toString();
-        assertThat(output)
-                .contains("Repository Report Summary:")
+        assertThat(output.replaceAll("\\s+", " "))
+                .contains("Repository Report Summary (Dry Run)")
+                .contains("Repository Format Removed # Removed Size Remaining # Remaining Size")
                 .contains("maven-central")
                 .contains("npm-proxy")
                 .contains("TOTAL");
@@ -46,15 +47,16 @@ class NxReportConsoleTest {
     @Test
     void printSummary_withLongRepositoryNames_shouldAdjustFormatting() {
         RepositoryComponentsSummary summary = new RepositoryComponentsSummary();
-        summary.addRepositoryStats("very-long-repository-name-that-exceeds-thirty-characters", "maven2", 100, 1024000);
-        summary.addRepositoryStats("short", "npm", 50, 512000);
+        summary.addRepositoryStats("very-long-repository-name-that-exceeds-thirty-characters", "maven2", 100, 1024000, 50, 512000);
+        summary.addRepositoryStats("short", "npm", 50, 512000, 25, 256000);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);
 
-        NxReportConsole.printSummary(summary, SortBy.NAME, printStream);
+        NxReportConsole.printSummary(summary, SortBy.NAME, printStream, false);
 
         String output = outputStream.toString();
+        assertThat(output).contains("Repository Report Summary (Removal)");
         assertThat(output).contains("very-long-repository-name-that-exceeds-thirty-characters");
         assertThat(output).contains("short");
 
@@ -65,7 +67,7 @@ class NxReportConsoleTest {
             if (line.contains("very-long-repository-name-that-exceeds-thirty-characters")) {
                 foundLongName = true;
                 // The line should be properly formatted (columns should be separated correctly)
-                assertThat(line).matches(".*very-long-repository-name-that-exceeds-thirty-characters\\s+maven2\\s+\\d+\\s+.*");
+                assertThat(line).matches(".*very-long-repository-name-that-exceeds-thirty-characters\\s+maven2\\s+\\d+\\s+.*?");
                 break;
             }
         }
@@ -75,14 +77,14 @@ class NxReportConsoleTest {
     @Test
     void printSummary_sortByName_shouldSortAlphabetically() {
         RepositoryComponentsSummary summary = new RepositoryComponentsSummary();
-        summary.addRepositoryStats("zebra-repo", "maven2", 10, 1000);
-        summary.addRepositoryStats("alpha-repo", "npm", 20, 2000);
-        summary.addRepositoryStats("beta-repo", "docker", 30, 3000);
+        summary.addRepositoryStats("zebra-repo", "maven2", 10, 1000, 5, 500);
+        summary.addRepositoryStats("alpha-repo", "npm", 20, 2000, 10, 1000);
+        summary.addRepositoryStats("beta-repo", "docker", 30, 3000, 15, 1500);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);
 
-        NxReportConsole.printSummary(summary, SortBy.NAME, printStream);
+        NxReportConsole.printSummary(summary, SortBy.NAME, printStream, true);
 
         String output = outputStream.toString();
         int alphaIndex = output.indexOf("alpha-repo");
@@ -96,14 +98,14 @@ class NxReportConsoleTest {
     @Test
     void printSummary_sortBySize_shouldSortByDescendingSize() {
         RepositoryComponentsSummary summary = new RepositoryComponentsSummary();
-        summary.addRepositoryStats("small-repo", "maven2", 10, 1000);
-        summary.addRepositoryStats("large-repo", "npm", 20, 10000);
-        summary.addRepositoryStats("medium-repo", "docker", 30, 5000);
+        summary.addRepositoryStats("small-repo", "maven2", 10, 1000, 5, 500);
+        summary.addRepositoryStats("large-repo", "npm", 20, 10000, 10, 5000);
+        summary.addRepositoryStats("medium-repo", "docker", 30, 5000, 15, 2500);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);
 
-        NxReportConsole.printSummary(summary, SortBy.SIZE, printStream);
+        NxReportConsole.printSummary(summary, SortBy.SIZE, printStream, true);
 
         String output = outputStream.toString();
         int largeIndex = output.indexOf("large-repo");
@@ -118,14 +120,14 @@ class NxReportConsoleTest {
     @Test
     void printSummary_sortByComponents_shouldSortByDescendingComponentCount() {
         RepositoryComponentsSummary summary = new RepositoryComponentsSummary();
-        summary.addRepositoryStats("few-components", "maven2", 10, 1000);
-        summary.addRepositoryStats("many-components", "npm", 100, 2000);
-        summary.addRepositoryStats("some-components", "docker", 50, 3000);
+        summary.addRepositoryStats("few-components", "maven2", 10, 1000, 5, 500);
+        summary.addRepositoryStats("many-components", "npm", 100, 2000, 50, 1000);
+        summary.addRepositoryStats("some-components", "docker", 50, 3000, 25, 1500);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);
 
-        NxReportConsole.printSummary(summary, SortBy.COMPONENTS, printStream);
+        NxReportConsole.printSummary(summary, SortBy.COMPONENTS, printStream, true);
 
         String output = outputStream.toString();
         int manyIndex = output.indexOf("many-components");
@@ -140,13 +142,13 @@ class NxReportConsoleTest {
     @Test
     void printSummary_shouldDisplayTotalCorrectly() {
         RepositoryComponentsSummary summary = new RepositoryComponentsSummary();
-        summary.addRepositoryStats("repo1", "maven2", 100, 1024000);
-        summary.addRepositoryStats("repo2", "npm", 50, 512000);
+        summary.addRepositoryStats("repo1", "maven2", 100, 1024000, 50, 512000);
+        summary.addRepositoryStats("repo2", "npm", 50, 512000, 25, 256000);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);
 
-        NxReportConsole.printSummary(summary, SortBy.NAME, printStream);
+        NxReportConsole.printSummary(summary, SortBy.NAME, printStream, true);
 
         String output = outputStream.toString();
         assertThat(output).contains("TOTAL");
@@ -158,17 +160,18 @@ class NxReportConsoleTest {
     @Test
     void printGroupsSummary_withShortGroupNames_shouldFormatCorrectly() {
         GroupsSummary summary = new GroupsSummary();
-        summary.addGroupStats("org.springframework", 1200, 1800000000L); // 1.8 GB
-        summary.addGroupStats("com.example", 950, 1200000000L); // 1.2 GB
+        summary.addGroupStats("org.springframework", 1200, 1800000000L, 600, 900000000L); // 1.8 GB
+        summary.addGroupStats("com.example", 950, 1200000000L, 475, 600000000L); // 1.2 GB
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);
 
-        NxReportConsole.printGroupsSummary(summary, SortBy.COMPONENTS, 10, printStream);
+        NxReportConsole.printGroupsSummary(summary, SortBy.COMPONENTS, 10, printStream, false);
 
         String output = outputStream.toString();
-        assertThat(output)
-                .contains("Top Consuming Groups (by Components):")
+        assertThat(output.replaceAll("\\s+", " "))
+                .contains("Top Consuming Groups (by Components, Removal)")
+                .contains("Group Removed # Removed Size Remaining # Remaining Size")
                 .contains("org.springframework")
                 .contains("com.example")
                 .contains("1200")
@@ -183,16 +186,16 @@ class NxReportConsoleTest {
     @Test
     void printGroupsSummary_sortBySize_shouldSortCorrectly() {
         GroupsSummary summary = new GroupsSummary();
-        summary.addGroupStats("org.springframework", 800, 2000000000L); // 2.0 GB
-        summary.addGroupStats("com.example", 1200, 1000000000L); // 1.0 GB
+        summary.addGroupStats("org.springframework", 800, 2000000000L, 400, 1000000000L); // 2.0 GB
+        summary.addGroupStats("com.example", 1200, 1000000000L, 600, 500000000L); // 1.0 GB
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);
 
-        NxReportConsole.printGroupsSummary(summary, SortBy.SIZE, 10, printStream);
+        NxReportConsole.printGroupsSummary(summary, SortBy.SIZE, 10, printStream, true);
 
         String output = outputStream.toString();
-        assertThat(output).contains("Top Consuming Groups (by Size):");
+        assertThat(output).contains("Top Consuming Groups (by Size, Dry Run)");
 
         // Check that groups are sorted by size (org.springframework should come first with 2.0 GB)
         int springIndex = output.indexOf("org.springframework");
@@ -203,14 +206,14 @@ class NxReportConsoleTest {
     @Test
     void printGroupsSummary_withTopGroups_shouldLimitOutput() {
         GroupsSummary summary = new GroupsSummary();
-        summary.addGroupStats("org.springframework", 1000, 1000000000L);
-        summary.addGroupStats("com.example", 900, 900000000L);
-        summary.addGroupStats("org.apache", 800, 800000000L);
+        summary.addGroupStats("org.springframework", 1000, 1000000000L, 500, 500000000L);
+        summary.addGroupStats("com.example", 900, 900000000L, 450, 450000000L);
+        summary.addGroupStats("org.apache", 800, 800000000L, 400, 400000000L);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);
 
-        NxReportConsole.printGroupsSummary(summary, SortBy.COMPONENTS, 2, printStream);
+        NxReportConsole.printGroupsSummary(summary, SortBy.COMPONENTS, 2, printStream, true);
 
         String output = outputStream.toString();
         assertThat(output)
@@ -222,13 +225,13 @@ class NxReportConsoleTest {
     @Test
     void printGroupsSummary_withLongGroupNames_shouldAdjustFormatting() {
         GroupsSummary summary = new GroupsSummary();
-        summary.addGroupStats("very-long-group-name-that-exceeds-thirty-characters.deeply.nested", 100, 1024000);
-        summary.addGroupStats("short", 50, 512000);
+        summary.addGroupStats("very-long-group-name-that-exceeds-thirty-characters.deeply.nested", 100, 1024000, 50, 512000);
+        summary.addGroupStats("short", 50, 512000, 25, 256000);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream printStream = new PrintStream(outputStream);
 
-        NxReportConsole.printGroupsSummary(summary, SortBy.NAME, 10, printStream);
+        NxReportConsole.printGroupsSummary(summary, SortBy.NAME, 10, printStream, true);
 
         String output = outputStream.toString();
         String[] lines = output.split("\n");
@@ -238,7 +241,7 @@ class NxReportConsoleTest {
             if (line.contains("very-long-group-name-that-exceeds-thirty-characters.deeply.nested")) {
                 foundLongName = true;
                 // The line should be properly formatted (columns should be separated correctly)
-                assertThat(line).matches(".*very-long-group-name-that-exceeds-thirty-characters\\.deeply\\.nested\\s+\\d+\\s+.*");
+                assertThat(line).matches(".*very-long-group-name-that-exceeds-thirty-characters\\.deeply\\.nested\\s+\\d+\\s+.*?");
                 break;
             }
         }

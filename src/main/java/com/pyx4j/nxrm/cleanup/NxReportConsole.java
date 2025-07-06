@@ -16,8 +16,8 @@ class NxReportConsole {
      * @param summary The summary to print
      * @param sortBy  The sorting option to use
      */
-    static void printSummary(RepositoryComponentsSummary summary, SortBy sortBy) {
-        printSummary(summary, sortBy, System.out);
+    static void printSummary(RepositoryComponentsSummary summary, SortBy sortBy, boolean dryRun) {
+        printSummary(summary, sortBy, System.out, dryRun);
     }
 
     /**
@@ -27,9 +27,9 @@ class NxReportConsole {
      * @param sortBy  The sorting option to use
      * @param out     The PrintStream to write to
      */
-    static void printSummary(RepositoryComponentsSummary summary, SortBy sortBy, PrintStream out) {
-        out.println("\nRepository Report Summary:");
-        out.println("======================================================================");
+    static void printSummary(RepositoryComponentsSummary summary, SortBy sortBy, PrintStream out, boolean dryRun) {
+        out.println("\nRepository Report Summary (" + (dryRun ? "Dry Run" : "Removal") + "):");
+        out.println("====================================================================================================================");
 
         // Calculate the maximum repository name length for dynamic formatting
         int maxRepoNameLength = Math.max(30, // minimum width
@@ -39,16 +39,18 @@ class NxReportConsole {
                         .orElse(30) + 2); // add some padding
 
         // Create format strings based on calculated width
-        String headerFormat = "%-" + maxRepoNameLength + "s %-10s %-12s %-15s%n";
-        String separatorFormat = "%-" + maxRepoNameLength + "s %-10s %-12s %-15s%n";
-        String dataFormat = "%-" + maxRepoNameLength + "s %-10s %12d %15s%n";
+        String headerFormat = "%-" + maxRepoNameLength + "s %-10s %-12s %-15s %-15s %-15s%n";
+        String separatorFormat = "%-" + maxRepoNameLength + "s %-10s %-12s %-15s %-15s %-15s%n";
+        String dataFormat = "%-" + maxRepoNameLength + "s %-10s %12d %15s %15d %15s%n";
 
         // Print header
-        out.printf(headerFormat, "Repository", "Format", "Components", "Total Size");
+        out.printf(headerFormat, "Repository", "Format", "Removed #", "Removed Size", "Remaining #", "Remaining Size");
         out.printf(separatorFormat,
                 "-".repeat(maxRepoNameLength),
                 "----------",
                 "------------",
+                "---------------",
+                "---------------",
                 "---------------");
 
         // Sort and print repository data
@@ -60,12 +62,15 @@ class NxReportConsole {
                             repoName,
                             stats.getFormat(),
                             stats.getComponentCount(),
-                            formatSize(stats.getSizeBytes()));
+                            formatSize(stats.getSizeBytes()),
+                            stats.getRemainingComponentCount(),
+                            formatSize(stats.getRemainingSizeBytes()));
                 });
 
         // Print total
         out.printf("%n" + dataFormat,
-                "TOTAL", "-", summary.getTotalComponents(), formatSize(summary.getTotalSizeBytes()));
+                "TOTAL", "-", summary.getTotalComponents(), formatSize(summary.getTotalSizeBytes()),
+                summary.getTotalRemainingComponents(), formatSize(summary.getTotalRemainingSizeBytes()));
     }
 
     /**
@@ -75,8 +80,8 @@ class NxReportConsole {
      * @param sortBy    The sorting option to use
      * @param topGroups The number of top groups to show
      */
-    static void printGroupsSummary(GroupsSummary summary, SortBy sortBy, int topGroups) {
-        printGroupsSummary(summary, sortBy, topGroups, System.out);
+    static void printGroupsSummary(GroupsSummary summary, SortBy sortBy, int topGroups, boolean dryRun) {
+        printGroupsSummary(summary, sortBy, topGroups, System.out, dryRun);
     }
 
     /**
@@ -87,10 +92,10 @@ class NxReportConsole {
      * @param topGroups The number of top groups to show
      * @param out       The PrintStream to write to
      */
-    static void printGroupsSummary(GroupsSummary summary, SortBy sortBy, int topGroups, PrintStream out) {
+    static void printGroupsSummary(GroupsSummary summary, SortBy sortBy, int topGroups, PrintStream out, boolean dryRun) {
         String sortDescription = sortBy == SortBy.SIZE ? "Size" : "Components";
-        out.println("\nTop Consuming Groups (by " + sortDescription + "):");
-        out.println("======================================================================");
+        out.println("\nTop Consuming Groups (by " + sortDescription + ", " + (dryRun ? "Dry Run" : "Removal") + "):");
+        out.println("====================================================================================================================");
 
         // Calculate the maximum group name length for dynamic formatting
         int maxGroupNameLength = Math.max(30, // minimum width
@@ -100,15 +105,17 @@ class NxReportConsole {
                         .orElse(30) + 2); // add some padding
 
         // Create format strings based on calculated width
-        String headerFormat = "%-" + maxGroupNameLength + "s %-12s %-15s%n";
-        String separatorFormat = "%-" + maxGroupNameLength + "s %-12s %-15s%n";
-        String dataFormat = "%-" + maxGroupNameLength + "s %12d %15s%n";
+        String headerFormat = "%-" + maxGroupNameLength + "s %-12s %-15s %-15s %-15s%n";
+        String separatorFormat = "%-" + maxGroupNameLength + "s %-12s %-15s %-15s %-15s%n";
+        String dataFormat = "%-" + maxGroupNameLength + "s %12d %15s %15d %15s%n";
 
         // Print header
-        out.printf(headerFormat, "Group", "Components", "Total Size");
+        out.printf(headerFormat, "Group", "Removed #", "Removed Size", "Remaining #", "Remaining Size");
         out.printf(separatorFormat,
                 "-".repeat(maxGroupNameLength),
                 "------------",
+                "---------------",
+                "---------------",
                 "---------------");
 
         // Sort and print group data (limited to topGroups)
@@ -120,7 +127,9 @@ class NxReportConsole {
                     out.printf(dataFormat,
                             groupName,
                             stats.getComponentCount(),
-                            formatSize(stats.getSizeBytes()));
+                            formatSize(stats.getSizeBytes()),
+                            stats.getRemainingComponentCount(),
+                            formatSize(stats.getRemainingSizeBytes()));
                 });
     }
 
@@ -142,13 +151,15 @@ class NxReportConsole {
                 break;
             case SIZE:
                 comparator = Map.Entry.<String, RepositoryStats>comparingByValue(
-                                Comparator.comparingLong(RepositoryStats::getSizeBytes))
+                                Comparator.comparingLong(RepositoryStats::getSizeBytes)
+                                        .thenComparingLong(RepositoryStats::getRemainingSizeBytes))
                         .reversed(); // Largest first
                 break;
             case COMPONENTS:
             default:
                 comparator = Map.Entry.<String, RepositoryStats>comparingByValue(
-                                Comparator.comparingLong(RepositoryStats::getComponentCount))
+                                Comparator.comparingLong(RepositoryStats::getComponentCount)
+                                        .thenComparingLong(RepositoryStats::getRemainingComponentCount))
                         .reversed(); // Most components first
                 break;
         }
@@ -176,13 +187,15 @@ class NxReportConsole {
                 break;
             case SIZE:
                 comparator = Map.Entry.<String, GroupStats>comparingByValue(
-                                Comparator.comparingLong(GroupStats::getSizeBytes))
+                                Comparator.comparingLong(GroupStats::getSizeBytes)
+                                        .thenComparingLong(GroupStats::getRemainingSizeBytes))
                         .reversed(); // Largest first
                 break;
             case COMPONENTS:
             default:
                 comparator = Map.Entry.<String, GroupStats>comparingByValue(
-                                Comparator.comparingLong(GroupStats::getComponentCount))
+                                Comparator.comparingLong(GroupStats::getComponentCount)
+                                        .thenComparingLong(GroupStats::getRemainingComponentCount))
                         .reversed(); // Most components first
                 break;
         }

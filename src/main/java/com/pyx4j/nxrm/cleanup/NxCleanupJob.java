@@ -4,10 +4,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.pyx4j.nxrm.cleanup.model.CleanupRuleSet;
 import com.pyx4j.nxrm.cleanup.model.GroupsSummary;
@@ -72,7 +75,13 @@ public final class NxCleanupJob {
         Objects.requireNonNull(args, "Command arguments cannot be null");
         Objects.requireNonNull(args.nexusServerUrl, "Nexus server URL cannot be null");
 
-        log.info("Initializing report generation for Nexus server: {}", args.nexusServerUrl);
+        log.debug("Initializing scan of nexus server: {}", args.nexusServerUrl);
+
+        if (args.dryRun) {
+            System.out.printf("Nexus Repository Cleanup Job (Dry Run) starting — Scanning server: %s (no deletions will be performed)%n", args.nexusServerUrl);
+        } else {
+            System.out.printf("Nexus Repository Cleanup Job starting — Scanning server: %s%n", args.nexusServerUrl);
+        }
 
         // There is no authentication configured in swagger, so apiClient.setUsername(args.nexusUsername) can't be used here
         String authorizationHeader;
@@ -155,16 +164,17 @@ public final class NxCleanupJob {
                     return componentsApi.getComponents(repoName, actualToken)
                             .flatMap(page -> {
                                 if (page != null && page.getItems() != null) {
+                                    List<ComponentXO> allComponents = page.getItems();
                                     // Apply filter to components
-                                    List<ComponentXO> filteredComponents = page.getItems().stream()
+                                    List<ComponentXO> filteredComponents = allComponents.stream()
                                             .filter(componentFilter.getComponentFilter())
                                             .toList();
 
                                     log.debug("Repository {} page has {} components (filtered from {}) for processing",
-                                            repoName, filteredComponents.size(), page.getItems().size());
+                                            repoName, filteredComponents.size(), allComponents.size());
 
                                     // Process filtered components for this page
-                                    return processFilteredComponents(componentsApi, repository, filteredComponents)
+                                    return processFilteredComponents(componentsApi, repository, allComponents, filteredComponents)
                                             .then(Mono.fromCallable(() -> {
                                                 String nextToken = page.getContinuationToken();
                                                 return (nextToken != null && !nextToken.isEmpty()) ? nextToken : null;
@@ -184,25 +194,32 @@ public final class NxCleanupJob {
                 .then();
     }
 
-    private Mono<Void> processFilteredComponents(ComponentsApi componentsApi, AbstractApiRepository repository, List<ComponentXO> filteredComponents) {
-        if (filteredComponents.isEmpty()) {
+    private Mono<Void> processFilteredComponents(ComponentsApi componentsApi, AbstractApiRepository repository, List<ComponentXO> allComponents, List<ComponentXO> filteredComponents) {
+        if (allComponents.isEmpty()) {
             return Mono.empty();
         }
 
         final String repoName = repository.getName();
-        long totalSize = calculateTotalSize(filteredComponents);
+
+        List<ComponentXO> componentsToRemove = filteredComponents;
+        List<ComponentXO> remainingComponents = allComponents.stream()
+                .filter(c -> !componentsToRemove.contains(c))
+                .toList();
+
+        long removedSize = calculateTotalSize(componentsToRemove);
+        long remainingSize = calculateTotalSize(remainingComponents);
 
         log.trace("Processing {} filtered components in repository {} with total size of {} bytes",
-                filteredComponents.size(), repoName, totalSize);
+                componentsToRemove.size(), repoName, removedSize);
+
+        addToReports(repository, componentsToRemove, remainingComponents);
 
         if (args.dryRun) {
-            log.debug("DRY RUN: Would delete {} components from repository {}", filteredComponents.size(), repoName);
-            // In dry run mode, add all components to reports
-            filteredComponents.forEach(component -> addToReports(component, repository));
+            log.debug("DRY RUN: Would delete {} components from repository {}", componentsToRemove.size(), repoName);
             return Mono.empty();
         } else {
             // Delete components single-threaded execution and add to reports only if deletion is successful
-            return Flux.fromIterable(filteredComponents)
+            return Flux.fromIterable(componentsToRemove)
                     .concatMap(component -> deleteComponent(componentsApi, component, repository))
                     .then();
         }
@@ -217,7 +234,6 @@ public final class NxCleanupJob {
         return componentsApi.deleteComponent(componentId)
                 .doOnSuccess(unused -> {
                     log.debug("Successfully deleted component {} from repository {}", componentId, repoName);
-                    addToReports(component, repository);
                 })
                 .doOnError(error -> {
                     log.error("Failed to delete component {} from repository {}: {}",
@@ -230,29 +246,45 @@ public final class NxCleanupJob {
                 });
     }
 
-    private void addToReports(ComponentXO component, AbstractApiRepository repository) {
-        Objects.requireNonNull(component, "Component cannot be null");
+    private void addToReports(AbstractApiRepository repository, List<ComponentXO> componentsToRemove, List<ComponentXO> remainingComponents) {
         Objects.requireNonNull(repository, "Repository cannot be null");
 
         final String repoName = repository.getName();
         final String repoFormat = repository.getFormat();
-        final long componentSize = calculateComponentSize(component);
 
-        log.trace("Adding component {} to reports for repository {}", component.getId(), repoName);
+        long removedCount = componentsToRemove.size();
+        long removedSize = calculateTotalSize(componentsToRemove);
+        long remainingCount = remainingComponents.size();
+        long remainingSize = calculateTotalSize(remainingComponents);
+
+        log.trace("Adding to reports for repository {}: {} removed, {} remaining", repoName, removedCount, remainingCount);
 
         // Update repository summary if enabled
         if (repositoryComponentsSummary.isEnabled()) {
-            repositoryComponentsSummary.addRepositoryStats(repoName, repoFormat, 1, componentSize);
+            repositoryComponentsSummary.addRepositoryStats(repoName, repoFormat, removedCount, removedSize, remainingCount, remainingSize);
         }
 
-        // Update groups summary if enabled and component has a group
-        if (groupsSummary.isEnabled() && component.getGroup() != null) {
-            String groupName = component.getGroup();
-            groupsSummary.addGroupStats(groupName, 1, componentSize);
+        // Update groups summary if enabled
+        if (groupsSummary.isEnabled()) {
+            // Group components by their group name
+            var removedByGroup = componentsToRemove.stream().filter(c -> c.getGroup() != null).collect(Collectors.groupingBy(ComponentXO::getGroup));
+            var remainingByGroup = remainingComponents.stream().filter(c -> c.getGroup() != null).collect(Collectors.groupingBy(ComponentXO::getGroup));
+            var allGroups = Stream.concat(removedByGroup.keySet().stream(), remainingByGroup.keySet().stream()).collect(Collectors.toSet());
+
+            for (String groupName : allGroups) {
+                List<ComponentXO> removedInGroup = removedByGroup.getOrDefault(groupName, Collections.emptyList());
+                List<ComponentXO> remainingInGroup = remainingByGroup.getOrDefault(groupName, Collections.emptyList());
+                groupsSummary.addGroupStats(groupName,
+                        removedInGroup.size(), calculateTotalSize(removedInGroup),
+                        remainingInGroup.size(), calculateTotalSize(remainingInGroup));
+            }
         }
+
         if (componentWriter != null) {
             try {
-                componentWriter.writeComponent(component);
+                for (ComponentXO component : componentsToRemove) {
+                    componentWriter.writeComponent(component);
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -260,8 +292,19 @@ public final class NxCleanupJob {
     }
 
     private void writeReports() throws IOException {
-        try (ReportWriter reportWriter = ReportWriterFactory.create(args.reportOutputFile)) {
+        boolean hasPreviousOutput = false;
+        if (repositoryComponentsSummary.isEnabled()) {
+            NxReportConsole.printSummary(repositoryComponentsSummary, args.repositoriesSortBy, args.dryRun);
+            hasPreviousOutput = true;
+        }
+        if (groupsSummary.isEnabled()) {
+            if (hasPreviousOutput) {
+                System.out.println(); // Add blank line between reports
+            }
+            NxReportConsole.printGroupsSummary(groupsSummary, args.groupSort, args.topGroups, args.dryRun);
+        }
 
+        try (ReportWriter reportWriter = ReportWriterFactory.create(args.reportOutputFile)) {
             if (reportWriter != null) {
                 if (repositoryComponentsSummary.isEnabled()) {
                     reportWriter.writeRepositoryComponentsSummary(repositoryComponentsSummary, args.repositoriesSortBy);
@@ -269,21 +312,8 @@ public final class NxCleanupJob {
                 if (groupsSummary.isEnabled()) {
                     reportWriter.writeGroupsSummary(groupsSummary, args.groupSort, args.topGroups);
                 }
-            } else {
-                boolean hasPreviousOutput = false;
-                if (repositoryComponentsSummary.isEnabled()) {
-                    NxReportConsole.printSummary(repositoryComponentsSummary, args.repositoriesSortBy);
-                    hasPreviousOutput = true;
-                }
-                if (groupsSummary.isEnabled()) {
-                    if (hasPreviousOutput) {
-                        System.out.println(); // Add blank line between reports
-                    }
-                    NxReportConsole.printGroupsSummary(groupsSummary, args.groupSort, args.topGroups);
-                    hasPreviousOutput = true;
-                }
             }
-
+        } finally {
             if (componentWriter != null) {
                 componentWriter.close();
             }

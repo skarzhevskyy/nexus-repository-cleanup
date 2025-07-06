@@ -23,7 +23,7 @@ class GroupsSummaryTest {
     void addGroupStats_withValidInput_shouldCreateGroupAndUpdateTotals() {
         GroupsSummary summary = new GroupsSummary();
 
-        summary.addGroupStats("org.springframework", 100, 1024000);
+        summary.addGroupStats("org.springframework", 100, 1024000, 0, 0);
 
         assertThat(summary.getGroupStats()).hasSize(1);
         assertThat(summary.getGroupStats().get("org.springframework").getComponentCount()).isEqualTo(100);
@@ -36,8 +36,8 @@ class GroupsSummaryTest {
     void addGroupStats_multipleGroups_shouldTrackSeparately() {
         GroupsSummary summary = new GroupsSummary();
 
-        summary.addGroupStats("org.springframework", 100, 1024000);
-        summary.addGroupStats("com.example", 50, 512000);
+        summary.addGroupStats("org.springframework", 100, 1024000, 0, 0);
+        summary.addGroupStats("com.example", 50, 512000, 0, 0);
 
         assertThat(summary.getGroupStats()).hasSize(2);
         assertThat(summary.getGroupStats().get("org.springframework").getComponentCount()).isEqualTo(100);
@@ -50,8 +50,8 @@ class GroupsSummaryTest {
     void addGroupStats_sameGroupMultipleTimes_shouldAccumulate() {
         GroupsSummary summary = new GroupsSummary();
 
-        summary.addGroupStats("org.springframework", 50, 512000);
-        summary.addGroupStats("org.springframework", 30, 256000);
+        summary.addGroupStats("org.springframework", 50, 512000, 0, 0);
+        summary.addGroupStats("org.springframework", 30, 256000, 0, 0);
 
         assertThat(summary.getGroupStats()).hasSize(1);
         assertThat(summary.getGroupStats().get("org.springframework").getComponentCount()).isEqualTo(80);
@@ -64,7 +64,7 @@ class GroupsSummaryTest {
     void addGroupStats_withNullGroupName_shouldThrowException() {
         GroupsSummary summary = new GroupsSummary();
 
-        assertThatThrownBy(() -> summary.addGroupStats(null, 10, 1024))
+        assertThatThrownBy(() -> summary.addGroupStats(null, 10, 1024, 0, 0))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessageContaining("Group name cannot be null");
     }
@@ -72,7 +72,7 @@ class GroupsSummaryTest {
     @Test
     void getGroupStats_shouldReturnUnmodifiableMap() {
         GroupsSummary summary = new GroupsSummary();
-        summary.addGroupStats("org.springframework", 100, 1024000);
+        summary.addGroupStats("org.springframework", 100, 1024000, 0, 0);
 
         var groupStats = summary.getGroupStats();
 

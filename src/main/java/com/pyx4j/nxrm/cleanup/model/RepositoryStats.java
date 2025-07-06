@@ -11,6 +11,10 @@ public class RepositoryStats {
 
     private long sizeBytes;
 
+    private long remainingComponentCount;
+
+    private long remainingSizeBytes;
+
     public RepositoryStats(String format) {
         this.format = format;
     }
@@ -30,5 +34,18 @@ public class RepositoryStats {
 
     public long getSizeBytes() {
         return sizeBytes;
+    }
+
+    public void addRemaining(long componentCount, long sizeBytes) {
+        this.remainingComponentCount += componentCount;
+        this.remainingSizeBytes += sizeBytes;
+    }
+
+    public long getRemainingComponentCount() {
+        return remainingComponentCount;
+    }
+
+    public long getRemainingSizeBytes() {
+        return remainingSizeBytes;
     }
 }

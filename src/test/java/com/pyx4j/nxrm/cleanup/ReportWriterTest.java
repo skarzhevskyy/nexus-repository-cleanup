@@ -17,7 +17,7 @@ class ReportWriterTest {
         StringWriter stringWriter = new StringWriter();
         try (ReportWriter reportWriter = new JsonReportWriter(stringWriter)) {
             RepositoryComponentsSummary summary = new RepositoryComponentsSummary();
-            summary.addRepositoryStats("test-repo", "maven2", 10, 1024);
+            summary.addRepositoryStats("test-repo", "maven2", 10, 1024, 0, 0);
             reportWriter.writeRepositoryComponentsSummary(summary, SortBy.NAME);
         }
         assertThat(stringWriter.toString()).contains("test-repo");
@@ -28,7 +28,7 @@ class ReportWriterTest {
         StringWriter stringWriter = new StringWriter();
         try (ReportWriter reportWriter = new CsvReportWriter(stringWriter)) {
             RepositoryComponentsSummary summary = new RepositoryComponentsSummary();
-            summary.addRepositoryStats("test-repo", "maven2", 10, 1024);
+            summary.addRepositoryStats("test-repo", "maven2", 10, 1024, 0, 0);
             reportWriter.writeRepositoryComponentsSummary(summary, SortBy.NAME);
         }
         assertThat(stringWriter.toString()).contains("\"test-repo\",\"maven2\",\"10\",\"1024\"");

@@ -9,9 +9,15 @@ public class GroupStats {
 
     private long sizeBytes;
 
+    private long remainingComponentCount;
+
+    private long remainingSizeBytes;
+
     public GroupStats() {
         this.componentCount = 0;
         this.sizeBytes = 0;
+        this.remainingComponentCount = 0;
+        this.remainingSizeBytes = 0;
     }
 
     public void addComponents(long componentCount, long sizeBytes) {
@@ -25,5 +31,18 @@ public class GroupStats {
 
     public long getSizeBytes() {
         return sizeBytes;
+    }
+
+    public void addRemaining(long componentCount, long sizeBytes) {
+        this.remainingComponentCount += componentCount;
+        this.remainingSizeBytes += sizeBytes;
+    }
+
+    public long getRemainingComponentCount() {
+        return remainingComponentCount;
+    }
+
+    public long getRemainingSizeBytes() {
+        return remainingSizeBytes;
     }
 }
