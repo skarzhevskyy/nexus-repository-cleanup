@@ -1,6 +1,8 @@
 plugins {
 	id("java")
 	id("application")
+	// Spring Boot runnable JAR support dependency management
+	id("org.springframework.boot") version "3.5.3"
 	// Create Java API from OpenAPI specification
 	id("org.openapi.generator") version "7.14.0"
 	// Dependencies list and diff automation in command line and CI/CD
@@ -24,12 +26,19 @@ application {
 	mainClass.set("com.pyx4j.nxrm.cleanup.Application")
 }
 
+tasks {
+	bootJar {
+		// Enable executable JAR creation
+		launchScript()
+	}
+}
+
 repositories {
 	mavenCentral()
 }
 
 dependencies {
-	implementation(platform("org.springframework.boot:spring-boot-dependencies:3.5.3"))
+	implementation(platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES))
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 
 	// Command line arguments
