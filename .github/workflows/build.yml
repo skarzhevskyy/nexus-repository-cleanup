@@ -15,6 +15,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      GITHUB_DEPENDENCY_GRAPH_ENABLED: false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,22 +30,15 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          cache-read-only: false
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release' }}
+          dependency-graph: generate-and-submit # This is done in Publish only
 
       - name: Validate Gradle wrapper
+        id: version
         run: |
           echo "Validating Gradle wrapper..."
           ./gradlew --version
+          version=$(./gradlew properties -q | awk '/^version:/ {print $2}')
 
       - name: Download dependencies
         run: |
@@ -56,6 +51,15 @@ jobs:
           echo "Java version: $(java -version 2>&1 | head -1)"
           echo "Gradle version: $(./gradlew --version | grep 'Gradle' | head -1)"
           ./gradlew build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: executable-jar
+          path: |
+            build/libs
+            !build/libs/*-plain.jar
+          retention-days: 30
 
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
@@ -72,6 +76,8 @@ jobs:
           ./gradlew jib -Djib.console=plain \
             -Pcontainer.image.registry="ghcr.io/${{ github.repository_owner }}" \
             -Pcontainer.image.name="${{ github.event.repository.name }}"
+        env:
+          GITHUB_DEPENDENCY_GRAPH_ENABLED: true
 
       - name: Package and Publish Helm Chart
         if: github.event_name != 'pull_request'
@@ -81,13 +87,13 @@ jobs:
           # Install Helm
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
           
-          VERSION="0.0.1-SNAPSHOT"
+          PROJECT_VERSION=${{ steps.version.outputs.version }}
           
           # Package the chart
-          helm package helm/nexus-repository-cleanup --version "${VERSION}" --app-version "${VERSION}"
+          helm package helm/nexus-repository-cleanup --version "${PROJECT_VERSION}" --app-version "${PROJECT_VERSION}"
           
           # Login to GHCR for Helm
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
           
           # Push the chart
-          helm push "nexus-repository-cleanup-${VERSION}".tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+          helm push "nexus-repository-cleanup-${PROJECT_VERSION}".tgz oci://ghcr.io/${{ github.repository_owner }}/charts
