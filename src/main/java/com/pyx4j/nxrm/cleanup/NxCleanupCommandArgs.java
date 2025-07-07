@@ -5,7 +5,10 @@ import java.util.concurrent.Callable;
 import com.pyx4j.nxrm.cleanup.model.SortBy;
 import picocli.CommandLine;
 
-@CommandLine.Command(description = "nxrm-cleanup", name = "nxrm-cleanup.jar", sortOptions = false, mixinStandardHelpOptions = true)
+@CommandLine.Command(name = "nexus-repository-cleanup.jar",
+        description = "Nexus Repository Cleanup Tool",
+        versionProvider = ManifestVersionProvider.class,
+        sortOptions = false, mixinStandardHelpOptions = true)
 public class NxCleanupCommandArgs implements Callable<Integer> {
 
     @CommandLine.Option(
