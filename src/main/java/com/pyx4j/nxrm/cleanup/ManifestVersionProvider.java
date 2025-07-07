@@ -6,14 +6,13 @@ import java.util.Enumeration;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import picocli.CommandLine;
 import picocli.CommandLine.IVersionProvider;
 
 class ManifestVersionProvider implements IVersionProvider {
 
     @Override
     public String[] getVersion() throws Exception {
-        Enumeration<URL> resources = CommandLine.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
+        Enumeration<URL> resources = this.getClass().getClassLoader().getResources("META-INF/MANIFEST.MF");
         while (resources.hasMoreElements()) {
             URL url = resources.nextElement();
             try {
@@ -21,8 +20,7 @@ class ManifestVersionProvider implements IVersionProvider {
                 if (isApplicableManifest(manifest)) {
                     Attributes attr = manifest.getMainAttributes();
                     return new String[]{
-                            get(attr, "Implementation-Title") + " version \"" +
-                                    get(attr, "Implementation-Version") + "\""
+                            get(attr, "Implementation-Title") + " version " + get(attr, "Implementation-Version")
                     };
                 }
             } catch (IOException ex) {
@@ -34,7 +32,7 @@ class ManifestVersionProvider implements IVersionProvider {
 
     private boolean isApplicableManifest(Manifest manifest) {
         Attributes attributes = manifest.getMainAttributes();
-        return "picocli".equals(get(attributes, "Implementation-Title"));
+        return "nexus-repository-cleanup".equals(get(attributes, "Implementation-Title"));
     }
 
     private static Object get(Attributes attributes, String key) {
