@@ -94,12 +94,31 @@ jobs:
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
           
           PROJECT_VERSION=${{ steps.version.outputs.version }}
+          PROJECT_NAME=${{ github.event.repository.name }}
           
           # Package the chart
-          helm package helm/nexus-repository-cleanup --version "${PROJECT_VERSION}" --app-version "${PROJECT_VERSION}"
+          helm package helm/${PROJECT_NAME} --version "${PROJECT_VERSION}" --app-version "${PROJECT_VERSION}"
           
           # Login to GHCR for Helm
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
           
           # Push the chart
-          helm push "nexus-repository-cleanup-${PROJECT_VERSION}".tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+          helm push "${PROJECT_NAME}-${PROJECT_VERSION}".tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+
+      - name: Cleanup old container images
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: ${{ github.event.repository.name }}
+          package-type: "container"
+          min-versions-to-keep: 7
+          delete-only-untagged-versions: "true"
+
+      - name: Cleanup old Helm images
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: charts/${{ github.event.repository.name }}
+          package-type: "container"
+          min-versions-to-keep: 7
+          delete-only-untagged-versions: "true"
