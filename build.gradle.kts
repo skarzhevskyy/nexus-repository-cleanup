@@ -43,7 +43,7 @@ dependencies {
 
 	// Command line arguments
 	implementation("info.picocli:picocli:4.7.7")
-	implementation("com.opencsv:opencsv:5.11.2")
+	implementation("com.opencsv:opencsv:5.12.0")
 	
 	// YAML parsing
 	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
