@@ -49,7 +49,7 @@ dependencies {
 	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
 	implementation("com.fasterxml.jackson.core:jackson-databind")
 
-	implementation("com.google.guava:guava:33.4.8-jre")
+	implementation("com.google.guava:guava:33.5.0-jre")
 	implementation("org.apache.commons:commons-lang3")
 	// Runtime validation alternative...
 	implementation("org.assertj:assertj-core:3.27.3")
