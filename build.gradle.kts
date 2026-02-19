@@ -33,6 +33,8 @@ repositories {
 dependencies {
 	implementation(platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES))
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
+    // Keep jackson 2.x for backward compatibility with the OpenAPI-generated client
+    implementation(platform("com.fasterxml.jackson:jackson-bom:2.21.0"))
 
 	// Command line arguments
 	implementation("info.picocli:picocli:4.7.7")
@@ -40,7 +42,9 @@ dependencies {
 	
 	// YAML parsing
 	implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
+    // Jackson 2.x for backward compatibility with generated OpenAPI client
 	implementation("com.fasterxml.jackson.core:jackson-databind")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
 	implementation("com.google.guava:guava:33.5.0-jre")
 	implementation("org.apache.commons:commons-lang3")
