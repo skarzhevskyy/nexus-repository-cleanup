@@ -15,7 +15,7 @@ This Helm chart deploys the Nexus Repository Cleanup application as a Kubernetes
 
 1. Install the chart:
 ```bash
-helm install my-nexus-cleanup oci://ghcr.io/skarzhevskyy/charts/nexus-repository-cleanup --version 0.0.1 \
+helm install my-nexus-cleanup oci://ghcr.io/skarzhevskyy/charts/nexus-repository-cleanup --version 0.0.1-SNAPSHOT \
   --set nexusRepositoryCleanup.nexusUrl=https://nexus.example.com \
   --set nexusRepositoryCleanup.credentialsSecretName=nexus-credentials
 ```
@@ -28,33 +28,7 @@ git clone https://github.com/skarzhevskyy/nexus-repository-cleanup.git
 cd nexus-repository-cleanup
 ```
 
-2. **Quick Development Setup**: Use the provided setup script:
-```bash
-# Basic installation with username/password
-./scripts/helm-setup.sh \
-  --nexus-url https://nexus.example.com \
-  --username your-nexus-username \
-  --password your-nexus-password \
-  --rules-file examples/cleanup-rules.yml \
-  --dry-run true
-
-# Installation with token authentication
-./scripts/helm-setup.sh \
-  --nexus-url https://nexus.example.com \
-  --token your-nexus-token \
-  --dry-run true
-
-# Custom installation with values file
-./scripts/helm-setup.sh \
-  --nexus-url https://nexus.example.com \
-  --username admin \
-  --password secret123 \
-  --values-file examples/production-values.yaml \
-  --namespace nexus-cleanup \
-  --release-name my-cleanup
-```
-
-3. **Manual Installation (Recommended)**: Create credentials secret and install manually:
+1. **Manual Installation**: Create credentials secret and install manually:
 ```bash
 kubectl create secret generic nexus-credentials \
   --from-literal=username=your-nexus-username \
@@ -63,7 +37,7 @@ kubectl create secret generic nexus-credentials \
 kubectl create configmap nexus-cleanup-rules \
         --from-file=cleanup-rules.yml="examples/cleanup-rules.yml"
 
-helm install my-nexus-cleanup oci://ghcr.io/skarzhevskyy/charts/nexus-repository-cleanup --version 0.0.1 \
+helm install my-nexus-cleanup oci://ghcr.io/skarzhevskyy/charts/nexus-repository-cleanup --version 0.0.1-SNAPSHOT \
   --set nexusRepositoryCleanup.nexusUrl=https://nexus.example.com \
   --set nexusRepositoryCleanup.credentialsSecretName=nexus-credentials \
   --set nexusRepositoryCleanup.existingCleanupRulesConfigMapName=nexus-cleanup-rules \
@@ -76,20 +50,20 @@ helm install my-nexus-cleanup oci://ghcr.io/skarzhevskyy/charts/nexus-repository
 
 The following table lists the configurable parameters and their default values:
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `image.registry` | Container registry | `ghcr.io` |
-| `image.repository` | Image repository | `skarzhevskyy/nexus-repository-cleanup` |
-| `image.tag` | Image tag | `""` (uses chart appVersion) |
-| `image.pullPolicy` | Image pull policy | `IfNotPresent` |
-| `cronjob.schedule` | Cron schedule for cleanup job | `0 1 * * *` (daily at 1 AM) |
-| `cronjob.timeZone` | Timezone for cron schedule | `""` |
-| `cronjob.suspend` | Suspend cron job execution | `false` |
-| `nexusRepositoryCleanup.nexusUrl` | Nexus Repository Manager URL | `""` |
-| `nexusRepositoryCleanup.credentialsSecretName` | Name of secret containing Nexus credentials | `""` |
-| `nexusRepositoryCleanup.existingCleanupRulesConfigMapName` | Name of existing ConfigMap with cleanup rules | `""` |
-| `nexusRepositoryCleanup.dryRun` | Enable dry run mode (no actual deletions) | `true` |
-| `nexusRepositoryCleanup.otherArguments` | Additional CLI arguments | `--report-top-groups --report-repositories-summary` |
+| Parameter                                                  | Description                                   | Default                                             |
+|------------------------------------------------------------|-----------------------------------------------|-----------------------------------------------------|
+| `image.registry`                                           | Container registry                            | `ghcr.io`                                           |
+| `image.repository`                                         | Image repository                              | `skarzhevskyy/nexus-repository-cleanup`             |
+| `image.tag`                                                | Image tag                                     | `""` (uses chart appVersion)                        |
+| `image.pullPolicy`                                         | Image pull policy                             | `IfNotPresent`                                      |
+| `cronjob.schedule`                                         | Cron schedule for cleanup job                 | `0 1 * * *` (daily at 1 AM)                         |
+| `cronjob.timeZone`                                         | Timezone for cron schedule                    | `""`                                                |
+| `cronjob.suspend`                                          | Suspend cron job execution                    | `false`                                             |
+| `nexusRepositoryCleanup.nexusUrl`                          | Nexus Repository Manager URL                  | `""`                                                |
+| `nexusRepositoryCleanup.credentialsSecretName`             | Name of secret containing Nexus credentials   | `""`                                                |
+| `nexusRepositoryCleanup.existingCleanupRulesConfigMapName` | Name of existing ConfigMap with cleanup rules | `""`                                                |
+| `nexusRepositoryCleanup.dryRun`                            | Enable dry run mode (no actual deletions)     | `true`                                              |
+| `nexusRepositoryCleanup.otherArguments`                    | Additional CLI arguments                      | `--report-top-groups --report-repositories-summary` |
 
 ### Cleanup Rules Configuration
 
