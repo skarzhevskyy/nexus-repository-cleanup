@@ -2,7 +2,7 @@ plugins {
 	id("java")
 	id("application")
 	// Spring Boot runnable JAR support dependency management
-	id("org.springframework.boot") version "3.5.7"
+	id("org.springframework.boot") version "4.0.3"
 	// Create Java API from OpenAPI specification
 	id("org.openapi.generator") version "7.19.0"
 	// Dependencies list and diff automation in command line and CI/CD
@@ -24,13 +24,6 @@ java {
 
 application {
 	mainClass.set("com.pyx4j.nxrm.cleanup.Application")
-}
-
-tasks {
-	bootJar {
-		// Enable executable JAR creation
-		launchScript()
-	}
 }
 
 repositories {
