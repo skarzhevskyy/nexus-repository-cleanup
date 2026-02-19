@@ -41,27 +41,27 @@ Create a `cleanup-rules.yml` file that defines the cleanup policies and their fi
 ```yaml
 rules:
   - name: "rule-name"                    # Required: Unique name for the rule
-    description: "Optional description"   # Optional: Human-readable description
+    description: "Optional description"  # Optional: Human-readable description
     enabled: true                        # Optional: Whether rule is enabled (default: true)
     action: delete                       # Optional: "delete" (default) or "keep"
-    filters:                            # Required: At least one filter must be specified
-      repositories:                     # Optional: Repository name patterns (supports wildcards)
+    filters:                             # Required: At least one filter must be specified
+      repositories:                      # Optional: Repository name patterns (supports wildcards)
         - "maven-*"
         - "npm-releases"
-      formats:                          # Optional: Repository format filters
+      formats:                           # Optional: Repository format filters
         - "maven2"
         - "npm"
-      groups:                           # Optional: Component group patterns (supports wildcards)
+      groups:                            # Optional: Component group patterns (supports wildcards)
         - "com.example.*"
         - "org.springframework.*"
-      names:                            # Optional: Component name patterns (supports wildcards)
+      names:                             # Optional: Component name patterns (supports wildcards)
         - "spring-*"
         - "*-test"
-      versions:                         # Optional: Version patterns (supports wildcards)
+      versions:                          # Optional: Version patterns (supports wildcards)
         - "1.*"
         - "*-SNAPSHOT"
-      updated: "90 days"                # Optional: Components last updated before this time
-      downloaded: "60 days"             # Optional: Components last downloaded before this time or "never"
+      updated: "90 days"                 # Optional: Components last updated before this time
+      downloaded: "60 days"              # Optional: Components last downloaded before this time or "never"
 ```
 
 #### Date Filter Formats
@@ -298,7 +298,7 @@ kubectl create secret generic nexus-credentials \
 kubectl create configmap nexus-cleanup-rules \
         --from-file=cleanup-rules.yml="examples/cleanup-rules.yml"
         
-helm install nexus-cleanup oci://ghcr.io/skarzhevskyy/charts/nexus-repository-cleanup --version 0.0.1 \
+helm install nexus-cleanup oci://ghcr.io/skarzhevskyy/charts/nexus-repository-cleanup --version 0.0.1-SNAPSHOT \
   --set nexusRepositoryCleanup.nexusUrl=https://nexus.example.com \
   --set nexusRepositoryCleanup.credentialsSecretName=nexus-credentials \
   --set nexusRepositoryCleanup.existingCleanupRulesConfigMapName=nexus-cleanup-rules \
