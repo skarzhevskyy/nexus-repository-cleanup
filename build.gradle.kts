@@ -4,7 +4,7 @@ plugins {
 	// Spring Boot runnable JAR support dependency management
 	id("org.springframework.boot") version "4.0.3"
 	// Create Java API from OpenAPI specification
-	id("org.openapi.generator") version "7.19.0"
+	id("org.openapi.generator") version "7.20.0"
 	// Dependencies list and diff automation in command line and CI/CD
 	id("org.cyclonedx.bom") version "3.1.0"
 	// Docker image creation
