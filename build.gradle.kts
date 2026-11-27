@@ -2,7 +2,7 @@ plugins {
 	id("java")
 	id("application")
 	// Spring Boot runnable JAR support dependency management
-	id("org.springframework.boot") version "4.1.2"
+	id("org.springframework.boot") version "4.2.0"
 	// Create Java API from OpenAPI specification
 	id("org.openapi.generator") version "7.27.0"
 	// Dependencies list and diff automation in command line and CI/CD
